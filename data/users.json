@@ -1,0 +1,41 @@
+[
+  {
+    "id": "7a29966e-19ec-4658-bf61-9d6915613de1",
+    "name": "Admin (Demo)",
+    "email": "admin@slopex.id",
+    "password": "$2a$12$5y1sp5qRHbdvN7aD0RdpqesQjhMnFHCkyUysou4n2eGvDAM/EQ7Ti",
+    "role": "admin",
+    "institution": "Universitas Padjadjaran",
+    "isActive": true,
+    "isDemo": true,
+    "lastLogin": "2026-08-18T12:51:55.151Z",
+    "createdAt": "2026-07-02T09:54:41.936Z",
+    "updatedAt": "2026-08-18T12:51:55.152Z"
+  },
+  {
+    "id": "0fa9b087-a475-40a1-a3f0-d9ae3fe3af84",
+    "name": "Operator (Demo)",
+    "email": "operator@slopex.id",
+    "password": "$2a$12$XFn/cOakX0m.dpth1d.KouveHGPErTEsB8k8n1ReqL8hlb.t1wr9y",
+    "role": "operator",
+    "institution": "Universitas Padjadjaran",
+    "isActive": true,
+    "isDemo": true,
+    "lastLogin": null,
+    "createdAt": "2026-07-02T09:54:42.180Z",
+    "updatedAt": "2026-07-02T09:54:42.180Z"
+  },
+  {
+    "id": "978c7955-b3ed-47a3-96ed-4a2fc4ab40ba",
+    "name": "Viewer (Demo)",
+    "email": "viewer@slopex.id",
+    "password": "$2a$12$EYBgp2WfXYUB8cQYLKxvI.duW4EKem4WQnbQ1YiAn8gSypu83rA12",
+    "role": "viewer",
+    "institution": "Universitas Padjadjaran",
+    "isActive": true,
+    "isDemo": true,
+    "lastLogin": null,
+    "createdAt": "2026-07-02T09:54:42.440Z",
+    "updatedAt": "2026-07-02T09:54:42.440Z"
+  }
+]

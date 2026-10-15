@@ -1,0 +1,11 @@
+**/node_modules
+**/.git
+**/.wwebjs_auth
+**/.wwebjs_cache
+npm-debug.log
+deploy*.js
+run-docker.js
+get-logs.js
+*.tar
+*.zip
+*.tgz

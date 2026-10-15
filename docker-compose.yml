@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  slopex:
+    build:
+      context: .
+      network: host
+    container_name: slopex-backend
+    restart: unless-stopped
+    ports:
+      - "8828:8828"
+    volumes:
+      - ./whatsapp-bot/.wwebjs_auth:/app/whatsapp-bot/.wwebjs_auth
+      - ./data:/app/data
+    environment:
+      - IS_DOCKER=true
+    env_file:
+      - .env

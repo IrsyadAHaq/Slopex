@@ -1,0 +1,46 @@
+[
+  {
+    "id": "ec1f6fd4-d7ab-4d30-be02-32d5dac6c304",
+    "deviceId": "SLOPEX-001",
+    "type": "danger",
+    "severity": "danger",
+    "title": "🚨 BAHAYA (DANGER) - Risiko Longsor Tinggi",
+    "message": "Risk: 91% (≥75%). Kemiringan=20.00° (>2.0°). Katup Drainase: BUKA. Sirine/Buzzer: AKTIF. Interval LoRa: 1 Menit. Segera evakuasi!",
+    "sensorSnapshot": {
+      "soilDangkal": 65,
+      "soilDalam": 70,
+      "magnitude": 20,
+      "riskScore": 91,
+      "loraInterval": "1 Menit",
+      "relayState": "BUKA",
+      "buzzerState": "AKTIF"
+    },
+    "acknowledged": true,
+    "acknowledgedBy": "7a29966e-19ec-4658-bf61-9d6915613de1",
+    "acknowledgedAt": "2026-08-16T08:35:18.367Z",
+    "createdAt": "2026-08-16T08:30:46.766Z",
+    "updatedAt": "2026-08-16T08:35:18.367Z"
+  },
+  {
+    "id": "7e678d03-ea15-47cd-b891-0b337c804433",
+    "deviceId": "SLOPEX-001",
+    "type": "danger",
+    "severity": "danger",
+    "title": "🚨 BAHAYA (DANGER) - Risiko Longsor Tinggi",
+    "message": "Risk: 75% (≥75%). Kemiringan=8.00° (>2.0°). Katup Drainase: BUKA. Sirine/Buzzer: AKTIF. Interval LoRa: 1 Menit. Segera evakuasi!",
+    "sensorSnapshot": {
+      "soilDangkal": 35,
+      "soilDalam": 40,
+      "magnitude": 8,
+      "riskScore": 75,
+      "loraInterval": "1 Menit",
+      "relayState": "BUKA",
+      "buzzerState": "AKTIF"
+    },
+    "acknowledged": true,
+    "acknowledgedBy": "7a29966e-19ec-4658-bf61-9d6915613de1",
+    "acknowledgedAt": "2026-08-16T08:35:18.367Z",
+    "createdAt": "2026-08-16T08:30:56.479Z",
+    "updatedAt": "2026-08-16T08:35:18.367Z"
+  }
+]
