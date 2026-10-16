@@ -1,30 +1,18 @@
 const { DB } = require('../config/db');
+const riskEngine = require('../utils/riskEngine');
 
 const SensorDataModel = {
   collection: 'sensor_data',
 
-  // Hitung risk score dari data sensor (SNI 8235:2017 & Kriteria SLOPEX)
-  computeRisk(soilDangkal, soilDalam, magnitude) {
-    const soilMax = Math.max(parseFloat(soilDangkal) || 0, parseFloat(soilDalam) || 0);
-    const tiltRiskVal = Math.abs(parseFloat(magnitude) || 0);
+  // Hitung evaluasi risiko lengkap dari data sensor (SNI 8235:2017 & Random Forest RF2.py)
+  evaluate(data) {
+    return riskEngine.evaluateRisk(data);
+  },
 
-    // Soil Risk (VWC)
-    const soilRisk = Math.min((soilMax / 85) * 100, 100);
-
-    // Perubahan Kemiringan ADXL345:
-    // Aman: < 1.0° (Risk < 50%)
-    // Waspada: 1.0° - 2.0° (Risk 50% - 74%)
-    // Bahaya: > 2.0° (Risk >= 75%)
-    let tiltRisk = 0;
-    if (tiltRiskVal < 1.0) {
-      tiltRisk = (tiltRiskVal / 1.0) * 49;
-    } else if (tiltRiskVal <= 2.0) {
-      tiltRisk = 50 + ((tiltRiskVal - 1.0) / 1.0) * 24;
-    } else {
-      tiltRisk = Math.min(100, 75 + ((tiltRiskVal - 2.0) / 1.0) * 25);
-    }
-
-    return Math.round(soilRisk * 0.6 + tiltRisk * 0.4);
+  // Hitung risk score dari data sensor (Backwards-compatibility)
+  computeRisk(soilDangkal, soilDalam, magnitude, slope, rainfall) {
+    const res = riskEngine.evaluateRisk({ soilDangkal, soilDalam, magnitude, slope, rainfall });
+    return res.riskScore;
   },
 
   // Tentukan status dari risk score
@@ -35,9 +23,19 @@ const SensorDataModel = {
   },
 
   async create(data) {
-    const { soilDangkal, soilDalam, magnitude } = data;
-    const riskScore   = this.computeRisk(soilDangkal, soilDalam, magnitude);
-    const statusDevice = data.statusDevice || this.getStatus(riskScore);
+    const { soilDangkal, soilDalam, magnitude, slopeDeg, slope, rainfall, curahHujan } = data;
+    
+    // Evaluasi menggunakan Random Forest & Weighted Risk Scoring Engine
+    const evalResult = riskEngine.evaluateRisk({
+      soilDangkal,
+      soilDalam,
+      magnitude,
+      slope: slopeDeg !== undefined ? slopeDeg : slope,
+      rainfall: rainfall !== undefined ? rainfall : curahHujan
+    });
+
+    const riskScore = evalResult.riskScore;
+    const statusDevice = data.statusDevice || evalResult.statusDevice;
 
     const { saveImmediately } = require('../config/db');
     const doc = await DB.insert(this.collection, {
@@ -46,9 +44,15 @@ const SensorDataModel = {
       soil1:        parseFloat(soilDangkal) || 0,
       soilDalam:    parseFloat(soilDalam) || 0,
       soil2:        parseFloat(soilDalam) || 0,
+      vwc:          evalResult.features.vwc,
       magnitude:    parseFloat(magnitude) || 0,
       tiltX:        parseFloat(magnitude) || 0,
       tiltY:        0,
+      slopeDeg:     evalResult.features.slopeDeg,
+      rainfall:     evalResult.features.curahHujan,
+      weightedScore: evalResult.weightedScore,
+      scores:       evalResult.scores,
+      probabilities: evalResult.probabilities,
       gpsLat:       data.gpsLat ? parseFloat(data.gpsLat) : -6.92556,
       gpsLng:       data.gpsLng ? parseFloat(data.gpsLng) : 107.77383,
       

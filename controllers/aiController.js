@@ -98,9 +98,14 @@ const chat = async (req, res) => {
     }
 
     const latestSensor = SensorData.getLatest();
-    let sensorContext = latestSensor 
-      ? `[DATA SENSOR: Risk ${latestSensor.riskScore}%, Kelembapan ${latestSensor.soil1}%]`
-      : '[DATA SENSOR: Belum ada data]';
+    let sensorContext = '[DATA SENSOR: Belum ada data]';
+    if (latestSensor) {
+      const vwc = latestSensor.vwc != null ? latestSensor.vwc : (((latestSensor.soilDangkal || latestSensor.soil1 || 0) + (latestSensor.soilDalam || latestSensor.soil2 || 0)) / 2);
+      const tilt = latestSensor.magnitude != null ? latestSensor.magnitude : (latestSensor.tiltX || 0);
+      const slope = latestSensor.slopeDeg != null ? latestSensor.slopeDeg : 30;
+      const rain = latestSensor.rainfall != null ? latestSensor.rainfall : 2000;
+      sensorContext = `[DATA SENSOR REAL-TIME]: Risk Score ${latestSensor.riskScore}%, Status: ${latestSensor.statusDevice}, VWC (Kadar Air Tanah): ${vwc.toFixed(1)}%, Magnitude Tilt: ${typeof tilt === 'number' ? tilt.toFixed(2) : tilt}°, Kemiringan Lereng: ${slope}°, Curah Hujan Wilayah: ${rain} mm/tahun.`;
+    }
 
     const historyData = formatHistory(conversationHistory.slice(-4));
     const langDirective = lang === 'en'
@@ -141,11 +146,23 @@ const analyzeCurrentCondition = async (req, res) => {
     const latest = SensorData.getLatest();
     if (!latest) return res.json({ success: true, analysis: 'Tidak ada data sensor.' });
 
-    const prompt = `Analisis kondisi lereng SLOPEX saat ini: Risk ${latest.riskScore}%
-        Berikan rangkuman terstruktur:
-        1) Interpretasi singkat kondisi
-        2) Level urgensi: AMAN / WASPADA / BAHAYA
-        3) Rekomendasi tindakan`;
+    const vwc = latest.vwc != null ? latest.vwc : (((latest.soilDangkal || latest.soil1 || 0) + (latest.soilDalam || latest.soil2 || 0)) / 2);
+    const tilt = latest.magnitude != null ? latest.magnitude : (latest.tiltX || 0);
+    const slope = latest.slopeDeg != null ? latest.slopeDeg : 30;
+    const rain = latest.rainfall != null ? latest.rainfall : 2000;
+
+    const prompt = `Analisis kondisi lereng SLOPEX saat ini:
+- Risk Score: ${latest.riskScore}%
+- Status Evaluasi: ${latest.statusDevice}
+- Kadar Air Tanah (VWC): ${vwc.toFixed(1)}%
+- Perubahan Kemiringan (ADXL345): ${typeof tilt === 'number' ? tilt.toFixed(2) : tilt}°
+- Kemiringan Lereng Asli: ${slope}°
+- Curah Hujan Wilayah: ${rain} mm/tahun
+
+Berikan rangkuman terstruktur:
+1) Interpretasi kondisi geoteknik & hidrologi lereng
+2) Tingkat urgensi mitigasi (AMAN / WASPADA / BAHAYA sesuai SNI 8235:2017)
+3) Rekomendasi tindakan lapangan operasional`;
 
     const body = {
       model: OLLAMA_MODEL,
@@ -191,9 +208,14 @@ const chatStream = async (req, res) => {
     }
 
     const latestSensor = SensorData.getLatest();
-    let sensorContext = latestSensor 
-      ? `[DATA SENSOR: Risk Score ${latestSensor.riskScore}%]`
-      : '[DATA SENSOR: Belum ada data]';
+    let sensorContext = '[DATA SENSOR: Belum ada data]';
+    if (latestSensor) {
+      const vwc = latestSensor.vwc != null ? latestSensor.vwc : (((latestSensor.soilDangkal || latestSensor.soil1 || 0) + (latestSensor.soilDalam || latestSensor.soil2 || 0)) / 2);
+      const tilt = latestSensor.magnitude != null ? latestSensor.magnitude : (latestSensor.tiltX || 0);
+      const slope = latestSensor.slopeDeg != null ? latestSensor.slopeDeg : 30;
+      const rain = latestSensor.rainfall != null ? latestSensor.rainfall : 2000;
+      sensorContext = `[DATA SENSOR REAL-TIME]: Risk Score ${latestSensor.riskScore}%, Status: ${latestSensor.statusDevice}, VWC (Kadar Air Tanah): ${vwc.toFixed(1)}%, Magnitude Tilt: ${typeof tilt === 'number' ? tilt.toFixed(2) : tilt}°, Kemiringan Lereng: ${slope}°, Curah Hujan Wilayah: ${rain} mm/tahun.`;
+    }
 
     const historyData = formatHistory(conversationHistory.slice(-4));
     const langDirective = lang === 'en'

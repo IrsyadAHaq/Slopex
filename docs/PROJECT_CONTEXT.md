@@ -169,15 +169,27 @@ slopexV100/
   - Dibuat folder `docs/` untuk merapikan berkas laporan `LAPORAN_SLOPEX_LENGKAP.*` dan dokumentasi proyek.
   - Menghapus direktori kosong `scratch/`.
 
+### Implementasi Random Forest & Weighted Risk Engine (16 Oktober 2026):
+- **Engine Baru `utils/riskEngine.js`**:
+  - Mengonversi 100% logika `RF2.py` dan aturan scoring SNI 8235:2017 ke dalam JavaScript murni (zero-dependency).
+  - Mengintegrasikan 4 parameter geoteknik: Slope Lereng (35%), Curah Hujan (30%), VWC Kadar Air Tanah (25%), dan Magnitude Tilt ADXL345 (10%).
+  - Interpolasi mulus skor berbobot (1.00 s.d. 4.30) ke persentase Dashboard (0% - 100%) dengan pemetaan status SNI: Aman (<50%), Waspada (50%-74%), Bahaya (>=75%).
+  - Estimasi probabilitas kelas model Random Forest ensemble (Aman, Waspada, Bahaya).
+- **Integrasi Menyeluruh**:
+  - `models/SensorData.js`: Menghitung risiko via `riskEngine.evaluateRisk()`, menyimpan parameter geoteknik (`vwc`, `slopeDeg`, `rainfall`, `weightedScore`, `scores`, `probabilities`).
+  - `controllers/sensorController.js` & `controllers/loraController.js`: Menerima parameter geoteknik dan mem-broadcast via Socket.IO real-time.
+  - `controllers/aiController.js`: Menyuntikkan 4 parameter geoteknik terkini ke konteks model LLaMA 3.2.
+  - `whatsapp-bot/index.js`: Format notifikasi darurat dan command `!status` kini menampilkan metrik geoteknik lengkap.
+
 ---
 
 ## 7. Known Issues & Roadmap Berikutnya
 
-1. **[PRIORITAS UTAMA / TAHAP 4] Implementasi Model Random Forest Riil**:
-   - **Kondisi**: Algoritma kalkulasi risiko di `SensorData.js` saat ini masih menggunakan estimasi formula linier sederhana (`soilRisk * 0.6 + tiltRisk * 0.4`).
-   - **Roadmap**: Mengintegrasikan model *Random Forest* (atau Decision Tree logic) berbasis 4 parameter geoteknik (VWC, Perubahan Kemiringan, Slope Lereng, Curah Hujan) sesuai standar SNI 8235:2017 dan matriks pengujian proposal PKM.
-2. **Konsumsi Memori WhatsApp Bot**:
+1. **Konsumsi Memori WhatsApp Bot**:
    - **Kondisi**: `whatsapp-web.js` menjalankan browser headless (Puppeteer/Chromium) yang memakan RAM cukup besar (~300–500 MB) pada VPS kecil.
    - **Roadmap**: Pertimbangkan integrasi alternatif via Baileys (socket-based) jika VPS menghadapi keterbatasan memori.
-3. **Database Concurrency**:
+2. **Database Concurrency**:
    - **Kondisi**: Flat JSON database memadai untuk prototipe pengujian lab/lapangan, namun perlu migrasi ke SQLite atau PostgreSQL jika node sensor bertambah banyak (> 10 alat).
+3. **Penyempurnaan Dataset Training Lapangan**:
+   - **Kondisi**: Dataset saat ini masih berbasis 40 skenario augmentasi grid.
+   - **Roadmap**: Menambahkan data time-series curah hujan dinamis (misal data API BMKG lokal atau rain gauge sensor otomatis).

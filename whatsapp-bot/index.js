@@ -131,18 +131,22 @@ async function broadcastEmergencyAlert(alertObj) {
     const riskScore = snap.riskScore != null ? snap.riskScore : (alertObj.riskScore || 0);
     const s1 = snap.soilDangkal != null ? snap.soilDangkal : (snap.soil1 != null ? snap.soil1 : 0);
     const s2 = snap.soilDalam != null ? snap.soilDalam : (snap.soil2 != null ? snap.soil2 : 0);
+    const vwc = snap.vwc != null ? snap.vwc : ((s1 + s2) / 2);
     const mag = snap.magnitude != null ? snap.magnitude : 0;
+    const slope = snap.slopeDeg != null ? snap.slopeDeg : 30;
+    const rain = snap.rainfall != null ? snap.rainfall : 2000;
     const isDanger = alertObj.severity === 'danger' || riskScore >= RISK_DANGER;
 
     const msg = `🚨 *SLOPEX PERINGATAN DINI* 🚨\n`
         + `=========================\n`
         + (isDanger ? `🔴 *STATUS: BAHAYA (AWAS)*\n` : `🟡 *STATUS: WASPADA (SIAGA)*\n`)
         + `${alertObj.message || alertObj.title || 'Terdeteksi peningkatan risiko longsor di area pantauan.'}\n\n`
-        + `📊 *DATA SENSOR REAL-TIME:*\n`
+        + `📊 *DATA SENSOR & GEOTEKNIK:*\n`
         + `- Risk Score: *${riskScore}%*\n`
-        + `- Soil Dangkal: ${s1}%\n`
-        + `- Soil Dalam: ${s2}%\n`
-        + `- Kemiringan (Mag): ${mag}°\n\n`
+        + `- VWC (Kadar Air Rata-rata): *${vwc.toFixed(1)}%*\n`
+        + `- Perubahan Kemiringan (Tilt): *${typeof mag === 'number' ? mag.toFixed(2) : mag}°*\n`
+        + `- Sudut Lereng Asli (Slope): ${slope}°\n`
+        + `- Curah Hujan Wilayah: ${rain} mm/tahun\n\n`
         + `⚠️ *Instruksi Mitigasi (SNI 8235:2017):*\n`
         + (isDanger
             ? `• Segera evakuasi ke titik kumpul aman!\n• Sirine & drainase otomatis diaktifkan!`
@@ -265,18 +269,23 @@ client.on('message', async msg => {
 
         const statusStr = riskScore < 50 ? '✅ AMAN (NORMAL)' : (riskScore >= 75 ? '🚨 BAHAYA (AWAS)' : '⚠️ WASPADA (SIAGA)');
         
-        const replyMsg = `📊 *STATUS SENSOR SLOPEX TERKINI* 📊\n`
+        const vwc = sensor.vwc != null ? sensor.vwc : ((soilDangkal + soilDalam) / 2);
+        const slope = sensor.slopeDeg != null ? sensor.slopeDeg : 30;
+        const rain = sensor.rainfall != null ? sensor.rainfall : 2000;
+
+        const replyMsg = `📊 *STATUS SENSOR & RISIKO SLOPEX TERKINI* 📊\n`
             + `=========================\n`
             + `🔴 *Kondisi Lereng:* ${statusStr}\n`
-            + `- Risk Score: *${riskScore}%*\n`
-            + `- Soil Moisture (Atas): ${soilDangkal}%\n`
-            + `- Soil Moisture (Bawah): ${soilDalam}%\n`
-            + `- Kemiringan Lereng: ${magnitude}°\n`
-            + `- Perangkat: ${statusDevice}\n`
+            + `- Risk Score: *${riskScore}%* (Klasifikasi: ${statusDevice})\n`
+            + `- VWC (Kadar Air Tanah): ${vwc.toFixed(1)}%\n`
+            + `- Soil Atas / Bawah: ${soilDangkal}% / ${soilDalam}%\n`
+            + `- Perubahan Sudut (Tilt): ${typeof magnitude === 'number' ? magnitude.toFixed(2) : magnitude}°\n`
+            + `- Kemiringan Lereng Asli: ${slope}°\n`
+            + `- Curah Hujan Wilayah: ${rain} mm/tahun\n`
             + `- Tegangan Solar / Aki: ${vSolar}V / ${vAki}V\n`
-            + `- Status Relai Drainase: ${statusRelay}\n`
+            + `- Status Katup Drainase: ${statusRelay}\n`
             + `=========================\n`
-            + `_Data diperbarui secara real-time dari sistem SLOPEX._`;
+            + `_Data diperbarui secara real-time dari model Random Forest & SNI 8235._`;
         msg.reply(replyMsg);
     } else if (text === '!bantuan') {
         const replyMsg = `ℹ️ *PANDUAN MITIGASI SLOPEX (SNI 8235:2017)* ℹ️\n`

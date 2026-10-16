@@ -15,12 +15,20 @@ const setDrainageCtrl = (ctrl) => { _drainageCtrl = ctrl; };
 const receiveData = async (req, res) => {
   try {
     console.log('[API] Menerima data dari ESP32:', req.body);
-    const { soilDangkal, soilDalam, magnitude, gpsLat, gpsLng, statusDevice, deviceId, vSolar, iSolar, vBuck, iBuck, vAki, iAki, statusRelay } = req.body;
+    const {
+      soilDangkal, soilDalam, magnitude, gpsLat, gpsLng,
+      statusDevice, deviceId, vSolar, iSolar, vBuck, iBuck,
+      vAki, iAki, statusRelay, slopeDeg, slope, rainfall, curahHujan
+    } = req.body;
 
     if (soilDangkal === undefined || soilDalam === undefined || magnitude === undefined)
       return res.status(400).json({ success: false, message: 'Wajib: soilDangkal, soilDalam, magnitude' });
 
-    const doc = await SensorData.create({ deviceId, soilDangkal, soilDalam, magnitude, gpsLat, gpsLng, statusDevice, vSolar, iSolar, vBuck, iBuck, vAki, iAki, statusRelay });
+    const doc = await SensorData.create({
+      deviceId, soilDangkal, soilDalam, magnitude, gpsLat, gpsLng,
+      statusDevice, vSolar, iSolar, vBuck, iBuck, vAki, iAki, statusRelay,
+      slopeDeg, slope, rainfall, curahHujan
+    });
 
     // 1. Cek threshold & buat alert
     await checkAndCreateAlert(doc);
@@ -32,8 +40,18 @@ const receiveData = async (req, res) => {
     if (io) io.emit('sensorUpdate', {
       deviceId:     doc.deviceId,
       soilDangkal:  doc.soilDangkal,
+      soil1:        doc.soil1,
       soilDalam:    doc.soilDalam,
+      soil2:        doc.soil2,
+      vwc:          doc.vwc,
       magnitude:    doc.magnitude,
+      tiltX:        doc.tiltX,
+      tiltY:        doc.tiltY,
+      slopeDeg:     doc.slopeDeg,
+      rainfall:     doc.rainfall,
+      weightedScore: doc.weightedScore,
+      scores:       doc.scores,
+      probabilities: doc.probabilities,
       gpsLat:       doc.gpsLat,
       gpsLng:       doc.gpsLng,
       riskScore:    doc.riskScore,
