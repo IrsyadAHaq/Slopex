@@ -18,7 +18,7 @@ function createZip() {
         archive.on('error', (err) => reject(err));
         archive.pipe(output);
 
-        // We glob all files including hidden ones, but IGNORE node_modules, git, data, and whatsapp auth cache
+        // We glob all files including hidden ones, but IGNORE node_modules, git, data, docs, and whatsapp auth cache
         archive.glob('**/*', {
             cwd: rootDir,
             ignore: [
@@ -27,6 +27,8 @@ function createZip() {
                 'whatsapp-bot/.wwebjs_auth/**',
                 'whatsapp-bot/.wwebjs_cache/**',
                 'data/**', // EXCLUDE data directory to prevent wiping out server database!
+                'docs/**',
+                'scripts/create_docs.py',
                 'scratch/**',
                 'slopex.zip'
             ],
@@ -37,4 +39,8 @@ function createZip() {
     });
 }
 
-createZip().catch(console.error);
+module.exports = { createZip };
+
+if (require.main === module) {
+    createZip().catch(console.error);
+}

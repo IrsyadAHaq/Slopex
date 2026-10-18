@@ -1,29 +1,36 @@
 const fs = require('fs');
 const path = require('path');
-const { Client } = require('ssh2');
+const { createZip } = require('./zip');
 
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const HOST = process.env.SSH_HOST || 'tricia';
 const PORT = parseInt(process.env.SSH_PORT, 10) || 22;
 const USER = process.env.SSH_USER || 'slopex';
-const PASSWORD = process.argv[2] || process.env.SSH_PASSWORD || 'L42d11ejXr';
+
+const args = process.argv.slice(2);
+const RESET_DATA = args.includes('--reset-data') || args.includes('--fresh-db');
+const nonFlagArgs = args.filter(a => !a.startsWith('--'));
+const PASSWORD = nonFlagArgs[0] || process.env.SSH_PASSWORD || 'L42d11ejXr';
 
 const zipPath = path.join(__dirname, '../slopex.zip');
 
-const RESET_DATA = process.argv.includes('--reset-data') || process.argv.includes('--fresh-db');
+async function startDeploy() {
+    console.log('[DEPLOY] Memaketkan kode terbaru ke slopex.zip...');
+    await createZip();
+    console.log(`[DEPLOY] Menghubungkan ke SSH ${USER}@${HOST}:${PORT}...`);
 
-const conn = new Client();
-conn.on('ready', () => {
-    console.log('Client :: ready');
-    conn.sftp((err, sftp) => {
-        if (err) throw err;
-        console.log('Uploading slopex.zip...');
-        const readStream = fs.createReadStream(zipPath);
-        const writeStream = sftp.createWriteStream('/home/slopex/slopex.zip');
-        
-        writeStream.on('close', () => {
-            console.log('File transferred successfully.');
+    const conn = new Client();
+    conn.on('ready', () => {
+        console.log('[DEPLOY] Client SSH terhubung! Mengunggah slopex.zip via SFTP...');
+        conn.sftp((err, sftp) => {
+            if (err) throw err;
+            console.log('[DEPLOY] Mengunggah berkas zip ke server...');
+            const readStream = fs.createReadStream(zipPath);
+            const writeStream = sftp.createWriteStream('/home/slopex/slopex.zip');
+            
+            writeStream.on('close', () => {
+                console.log('[DEPLOY] Berkas slopex.zip berhasil diunggah.');
             // Command chain using Docker helper container to fix file ownership, preserve server data, and deploy
             const cmd = [
                 // 1. Stop any container using port 8828
@@ -85,4 +92,10 @@ conn.on('ready', () => {
     port: PORT,
     username: USER,
     password: PASSWORD
+});
+}
+
+startDeploy().catch(err => {
+    console.error('[DEPLOY] Fatal error:', err);
+    process.exit(1);
 });
