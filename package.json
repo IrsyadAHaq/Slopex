@@ -6,6 +6,7 @@
     "start": "node server.js",
     "start:all": "concurrently \"node server.js\" \"node whatsapp-bot/index.js\"",
     "dev": "nodemon server.js",
+    "rundev": "nodemon server.js",
     "dev:all": "concurrently \"nodemon server.js\" \"node whatsapp-bot/index.js\"",
     "bundle": "node scripts/zip.js",
     "deploy": "node scripts/deploy.js",

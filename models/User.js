@@ -29,18 +29,19 @@ const UserModel = {
     const hashed = await bcrypt.hash(password, 12);
 
     const isAutoVerified = isDemo || role === 'viewer';
+    const cleanRole = ['admin', 'operator', 'viewer'].includes(role) ? role : 'viewer';
 
     const { saveImmediately } = require('../config/db');
     const doc = await DB.insert(this.collection, {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password: hashed,
-      role,
-      institution,
-      whatsapp: whatsapp.replace(/\D/g, ''),
+      role: cleanRole,
+      institution: (institution || '').trim(),
+      whatsapp: whatsapp ? String(whatsapp).replace(/\D/g, '') : '',
       isActive: isAutoVerified,
       isVerified: isAutoVerified,
-      isDemo,
+      isDemo: Boolean(isDemo),
       verificationToken: isAutoVerified ? null : uuidv4(),
       lastLogin: null
     });

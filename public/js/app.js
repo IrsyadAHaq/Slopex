@@ -94,6 +94,15 @@ const App = {
       MapModule.refresh();
     }
 
+    // Khusus drainage: sinkronisasi pembacaan sensor live & riwayat
+    if (pageId === 'drainage') {
+      if (AppState.latestSensor && typeof Dashboard !== 'undefined') {
+        Dashboard.updateReadings(AppState.latestSensor);
+      }
+      if (typeof loadDrainageLogs === 'function') loadDrainageLogs();
+      if (typeof Dashboard !== 'undefined') Dashboard.loadDrainageStatus();
+    }
+
     // Tutup sidebar di mobile
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
@@ -113,6 +122,13 @@ const App = {
       case 'monitoring':
         await Monitoring.init();
         break;
+      case 'drainage':
+        if (AppState.latestSensor && typeof Dashboard !== 'undefined') {
+          Dashboard.updateReadings(AppState.latestSensor);
+        }
+        if (typeof loadDrainageLogs === 'function') await loadDrainageLogs();
+        if (typeof Dashboard !== 'undefined') await Dashboard.loadDrainageStatus();
+        break;
       case 'map':
         MapModule.init();
         break;
@@ -120,6 +136,12 @@ const App = {
         await Monitoring.renderSensorTable('reports-table-body');
         if (typeof Monitoring.loadReportsStats === 'function') {
           await Monitoring.loadReportsStats();
+        }
+        break;
+      case 'devices':
+        if (typeof Dashboard !== 'undefined' && typeof Dashboard.setPowerHistoryFilter === 'function') {
+          const btn7 = document.querySelectorAll('#page-devices .time-filter-btn')[1];
+          await Dashboard.setPowerHistoryFilter(7, btn7);
         }
         break;
       case 'settings':
@@ -181,7 +203,9 @@ function setupNotifObserver() {
         entry.target.classList.remove('unread');
         const alertId = entry.target.dataset.id;
         if (alertId) {
-          API.put(`/alerts/${alertId}/acknowledge`, {}).catch(() => {});
+          if (!AppState.user?.isDemo) {
+            API.put(`/alerts/${alertId}/acknowledge`, {}).catch(() => {});
+          }
           // Mark in local state too
           const a = AppState.alerts.find(x => x.id === alertId);
           if (a) a.acknowledged = true;
@@ -218,7 +242,9 @@ function autoReadVisibleNotifs() {
       item.classList.remove('unread');
       const alertId = item.dataset.id;
       if (alertId) {
-        API.put(`/alerts/${alertId}/acknowledge`, {}).catch(() => {});
+        if (!AppState.user?.isDemo) {
+          API.put(`/alerts/${alertId}/acknowledge`, {}).catch(() => {});
+        }
         const a = AppState.alerts.find(x => x.id === alertId);
         if (a) a.acknowledged = true;
       }
@@ -298,60 +324,142 @@ function showNodeDetail(node) {
   showToast(`Node ${node} — membuka detail monitoring`, 'info');
   App.switchPage('monitoring');
 }
+// ==================== EXPORT MODAL & DATA DOWNLOAD ====================
+window.openExportModal = function() {
+  const modal = document.getElementById('export-modal-overlay');
+  if (!modal) return;
+  
+  // Set default dates for custom picker
+  const today = new Date();
+  const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const fromEl = document.getElementById('export-date-from');
+  const toEl = document.getElementById('export-date-to');
+  if (fromEl && !fromEl.value) fromEl.value = weekAgo.toISOString().slice(0, 10);
+  if (toEl && !toEl.value) toEl.value = today.toISOString().slice(0, 10);
 
-async function exportData() {
-  if (!AppState.latestSensor) {
-    showToast('Tidak ada data untuk diexport', 'warning');
-    return;
+  modal.style.display = 'flex';
+};
+
+window.closeExportModal = function() {
+  const modal = document.getElementById('export-modal-overlay');
+  if (modal) modal.style.display = 'none';
+};
+
+window.toggleCustomExportDate = function(isCustom) {
+  const customBox = document.getElementById('export-custom-dates');
+  if (customBox) {
+    customBox.style.display = isCustom ? 'block' : 'none';
   }
-  showToast('Mengunduh data sensor...', 'info');
+};
+
+window.executeExportDownload = async function() {
   try {
-    const { ok, data } = await API.get('/sensor/history?hours=24&limit=1000');
-    if (!ok) { showToast('Gagal mengambil data', 'danger'); return; }
+    const rangeRadio = document.querySelector('input[name="export-range"]:checked');
+    const rangeVal = rangeRadio ? rangeRadio.value : '24';
+    const formatRadio = document.querySelector('input[name="export-format"]:checked');
+    const format = formatRadio ? formatRadio.value : 'json';
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `slopex-data-${new Date().toISOString().slice(0,10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    showToast('Data berhasil diunduh!', 'success');
-  } catch (e) {
-    showToast('Error export: ' + e.message, 'danger');
+    let hours = 24;
+    let isCustom = false;
+    let dateFrom = null;
+    let dateTo = null;
+
+    if (rangeVal === 'custom') {
+      isCustom = true;
+      const fVal = document.getElementById('export-date-from')?.value;
+      const tVal = document.getElementById('export-date-to')?.value;
+      if (!fVal || !tVal) {
+        showToast('Pilih tanggal awal dan akhir untuk rentang kustom', 'warning');
+        return;
+      }
+      dateFrom = new Date(fVal + 'T00:00:00');
+      dateTo = new Date(tVal + 'T23:59:59');
+      hours = 336; // fetch full 14 days and filter client-side
+    } else {
+      hours = parseInt(rangeVal) || 24;
+    }
+
+    showToast('Menyiapkan berkas ekspor...', 'info');
+
+    const { ok, data } = await API.get(`/sensor/history?hours=${hours}&limit=1000`);
+    if (!ok || !data.data || data.data.length === 0) {
+      showToast('Tidak ada data yang tersedia pada rentang waktu ini', 'warning');
+      return;
+    }
+
+    let records = data.data;
+    if (isCustom) {
+      records = records.filter(r => {
+        const t = new Date(r.createdAt || r.timestamp).getTime();
+        return t >= dateFrom.getTime() && t <= dateTo.getTime();
+      });
+      if (records.length === 0) {
+        showToast('Tidak ada rekaman data pada rentang tanggal kustom tersebut', 'warning');
+        return;
+      }
+    }
+
+    const timestampStr = new Date().toISOString().slice(0, 10);
+
+    if (format === 'json') {
+      const exportPayload = {
+        project: 'SLOPEX Geo-Monitoring & AI Early Warning System',
+        institution: 'Universitas Padjadjaran (PKM-KC 2026)',
+        deviceId: 'SLOPEX-001',
+        exportedAt: new Date().toISOString(),
+        totalRecords: records.length,
+        filterRange: isCustom ? `Custom: ${dateFrom.toISOString().slice(0,10)} sd ${dateTo.toISOString().slice(0,10)}` : `${hours} Jam Terakhir`,
+        data: records
+      };
+
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `SLOPEX-Telemetry-${rangeVal}-${timestampStr}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } else {
+      // CSV format with UTF-8 BOM
+      let csv = "\uFEFFWaktu (WIB),Soil Dangkal (%),Soil Dalam (%),VWC (%),Magnitude (°),Curah Hujan (mm/j),Risk Score (%),Status Lereng,Relay Drainase,V Solar (V),I Solar (mA),V Aki (V),I Aki (mA)\r\n";
+      records.forEach(row => {
+        const dt = new Date(row.createdAt || row.timestamp);
+        const timeFormatted = isNaN(dt.getTime()) ? '' : (
+          dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' +
+          dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        );
+        const s1 = (row.soilDangkal != null ? row.soilDangkal : (row.soil1 || 0)).toFixed(1);
+        const s2 = (row.soilDalam != null ? row.soilDalam : (row.soil2 || 0)).toFixed(1);
+        const vwc = (row.vwc != null ? row.vwc : 0).toFixed(1);
+        const mag = (Math.abs(row.magnitude != null ? row.magnitude : (row.tiltX || 0))).toFixed(2);
+        const rain = (row.rainfall != null ? row.rainfall : (row.curahHujan || 0)).toFixed(1);
+        const risk = Math.round(row.riskScore || 0);
+        const status = risk >= 75 ? 'BAHAYA' : risk >= 50 ? 'WASPADA' : 'AMAN';
+        const relay = (row.statusRelay && String(row.statusRelay).toUpperCase().includes('OPEN')) || risk >= 75 ? 'OPEN' : 'CLOSED';
+        const vSolar = (row.vSolar || 0).toFixed(2);
+        const iSolar = Math.round(row.iSolar || 0);
+        const vAki = (row.vAki || 0).toFixed(2);
+        const iAki = Math.round(row.iAki || 0);
+
+        csv += `"${timeFormatted}",${s1},${s2},${vwc},${mag},${rain},${risk},"${status}","${relay}",${vSolar},${iSolar},${vAki},${iAki}\r\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `SLOPEX-Telemetry-${rangeVal}-${timestampStr}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    closeExportModal();
+    showToast(`Berhasil mengunduh ${records.length} data (${format.toUpperCase()})!`, 'success');
+  } catch (err) {
+    console.error('Export download error:', err);
+    showToast('Gagal mengunduh berkas: ' + err.message, 'danger');
   }
-}
-
-async function exportCSV() {
-  if (!AppState.latestSensor) {
-    showToast('Tidak ada data untuk diexport', 'warning');
-    return;
-  }
-  showToast('Mengunduh data sensor (CSV)...', 'info');
-  try {
-    const { ok, data } = await API.get('/sensor/history?hours=24&limit=1000');
-    if (!ok || !data.data) { showToast('Gagal mengambil data', 'danger'); return; }
-
-    let csvContent = "\uFEFFWaktu,Soil Dangkal (%),Soil Dalam (%),Magnitude (\u00B0),V Solar (V),I Solar (mA),V Aki (V),I Aki (mA),Status,Relay\n";
-    data.data.forEach(row => {
-      const time = new Date(row.createdAt).toLocaleString('id-ID');
-      const statusTeks = row.statusDevice || 'AMAN';
-      const statusRelay = row.statusRelay || 'MATI (STANDBY)';
-      csvContent += `"${time}",${(row.soilDangkal || row.soil1 || 0).toFixed(1)},${(row.soilDalam || row.soil2 || 0).toFixed(1)},${(row.magnitude || row.tiltX || 0).toFixed(2)},${(row.vSolar || 0).toFixed(2)},${row.iSolar || 0},${(row.vAki || 0).toFixed(2)},${row.iAki || 0},"${statusTeks}","${statusRelay}"\r\n`;
-    });
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `slopex-data-${new Date().toISOString().slice(0,10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    showToast('Data CSV berhasil diunduh!', 'success');
-  } catch (e) {
-    showToast('Error export CSV: ' + e.message, 'danger');
-  }
-}
+};
 
 async function saveSettings() {
   const name = document.getElementById('settings-name')?.value;

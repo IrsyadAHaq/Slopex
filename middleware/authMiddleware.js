@@ -31,6 +31,18 @@ const authorize = (...roles) => (req, res, next) => {
   next();
 };
 
+// Kunci akun Demo agar tidak bisa mengubah sistem / hardware (Read-Only)
+const restrictDemo = (req, res, next) => {
+  if (req.user?.isDemo) {
+    return res.status(403).json({
+      success: false,
+      isDemo: true,
+      message: '🔒 Mode Demo: Akses kontrol fisik/kritis dibatasi (Read-Only). Anda hanya memiliki izin pemantauan.'
+    });
+  }
+  next();
+};
+
 // Verifikasi API Key ESP32
 const deviceAuth = (req, res, next) => {
   const key = req.headers['x-api-key'];
@@ -39,4 +51,4 @@ const deviceAuth = (req, res, next) => {
   next();
 };
 
-module.exports = { protect, authorize, deviceAuth };
+module.exports = { protect, authorize, restrictDemo, deviceAuth };

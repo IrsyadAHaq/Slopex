@@ -30,14 +30,17 @@ const Dashboard = {
 
   async loadHistory() {
     try {
-      // Load default 1 hour for trend chart
-      const resChart = await API.get('/sensor/history?hours=1&limit=60');
+      // Load default 24 hours for trend chart (shows full daily stock-style fluctuations)
+      this.currentHours = 24;
+      const resChart = await API.get('/sensor/history?hours=24&limit=1000');
       if (resChart.ok && resChart.data.data) {
-        this.renderHistoryChart(resChart.data.data);
+        this.renderHistoryChart(resChart.data.data, 24);
       }
-      // Load default 24 hours for power history table (matches default '1 Hari' active filter)
-      const resPower = await API.get('/sensor/history?hours=24&limit=1000');
+      // Load 7 days for power history chart & table
+      this.powerFilterDays = 7;
+      const resPower = await API.get('/sensor/history?hours=168&limit=1000');
       if (resPower.ok && resPower.data.data) {
+        this.renderPowerHistoryChart(resPower.data.data, 7);
         this.renderPowerHistoryTable(resPower.data.data);
       }
     } catch (e) {
@@ -85,12 +88,37 @@ const Dashboard = {
     this.setElText('val-soilDalam', s2.toFixed(1));
     this.setElText('val-magnitude', typeof mag === 'number' ? mag.toFixed(2) : mag);
     
-    this.setElText('val-vSolar', sensor.vSolar != null ? sensor.vSolar : '--');
-    this.setElText('val-iSolar', sensor.iSolar != null ? sensor.iSolar : '--');
-    this.setElText('val-vBuck', sensor.vBuck != null ? sensor.vBuck : '--');
-    this.setElText('val-iBuck', sensor.iBuck != null ? sensor.iBuck : '--');
-    this.setElText('val-vAki', sensor.vAki != null ? sensor.vAki : '--');
-    this.setElText('val-iAki', sensor.iAki != null ? sensor.iAki : '--');
+    this.setElText('val-vSolar', sensor.vSolar != null ? Number(sensor.vSolar).toFixed(2) : '--');
+    this.setElText('val-iSolar', sensor.iSolar != null ? Math.round(Number(sensor.iSolar)) : '--');
+    this.setElText('val-vBuck', sensor.vBuck != null ? Number(sensor.vBuck).toFixed(2) : '--');
+    this.setElText('val-iBuck', sensor.iBuck != null ? Math.round(Number(sensor.iBuck)) : '--');
+    this.setElText('val-vAki', sensor.vAki != null ? Number(sensor.vAki).toFixed(2) : '--');
+    this.setElText('val-iAki', sensor.iAki != null ? Math.round(Number(sensor.iAki)) : '--');
+
+    // Live update for Power Health cards on Perangkat page
+    if (sensor.vSolar != null) {
+      this.setElText('stat-power-vsolar', Number(sensor.vSolar).toFixed(2) + ' V');
+    }
+    if (sensor.iSolar != null) {
+      this.setElText('stat-power-isolar', Math.round(Number(sensor.iSolar)) + ' mA');
+    }
+    if (sensor.vAki != null) {
+      this.setElText('stat-power-vaki', Number(sensor.vAki).toFixed(2) + ' V');
+      const elStat = document.getElementById('stat-power-status');
+      if (elStat) {
+        const v = Number(sensor.vAki);
+        if (v < 11.5) {
+          elStat.innerHTML = '<i class="fas fa-triangle-exclamation" style="color:var(--danger)"></i> TEGANGAN DROP (<11.5V)';
+          elStat.style.color = 'var(--danger)';
+        } else if (v < 12.2) {
+          elStat.innerHTML = '<i class="fas fa-circle-exclamation" style="color:var(--warning)"></i> PERLU PENGISIAN';
+          elStat.style.color = 'var(--warning)';
+        } else {
+          elStat.innerHTML = '<i class="fas fa-circle-check" style="color:#059669"></i> NORMAL & SEHAT';
+          elStat.style.color = '#059669';
+        }
+      }
+    }
 
     const relayEl = document.getElementById('val-relay');
     if (relayEl) {
@@ -148,7 +176,9 @@ const Dashboard = {
     // Update real-time history chart
     if (this.charts.history && sensor.timestamp) {
       const chart = this.charts.history;
-      const timeLabel = new Date(sensor.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      const timeLabel = (Dashboard.currentHours > 24)
+        ? new Date(sensor.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })
+        : new Date(sensor.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       chart.data.labels.push(timeLabel);
       chart.data.datasets[0].data.push(s1);
       chart.data.datasets[1].data.push(s2);
@@ -160,7 +190,7 @@ const Dashboard = {
         chart.data.labels.shift();
         chart.data.datasets.forEach(ds => ds.data.shift());
       }
-      chart.update();
+      chart.update('none');
     }
 
     // Also update monitoring page
@@ -174,6 +204,33 @@ const Dashboard = {
     if (aiRiskEl) {
       aiRiskEl.textContent = risk + '%';
       aiRiskEl.style.color = risk >= 75 ? 'var(--danger)' : risk >= 50 ? 'var(--warning)' : 'var(--success)';
+    }
+
+    // Update Drainage page Live Sensor card
+    const dS1 = document.getElementById('drain-soil1');
+    if (dS1) dS1.textContent = s1.toFixed(1) + '%';
+    const dS1Bar = document.getElementById('drain-soil1-bar');
+    if (dS1Bar) dS1Bar.style.width = Math.min(100, Math.max(0, s1)) + '%';
+
+    const dS2 = document.getElementById('drain-soil2');
+    if (dS2) dS2.textContent = s2.toFixed(1) + '%';
+    const dS2Bar = document.getElementById('drain-soil2-bar');
+    if (dS2Bar) dS2Bar.style.width = Math.min(100, Math.max(0, s2)) + '%';
+
+    const dMag = document.getElementById('drain-magnitude');
+    if (dMag) dMag.textContent = (typeof mag === 'number' ? mag.toFixed(2) : parseFloat(mag).toFixed(2)) + '°';
+    const dMagBar = document.getElementById('drain-magnitude-bar');
+    if (dMagBar) dMagBar.style.width = Math.min(100, Math.max(0, (mag / 10) * 100)) + '%';
+
+    const dRisk = document.getElementById('drain-risk');
+    if (dRisk) {
+      dRisk.textContent = risk + '%';
+      dRisk.style.color = risk >= 75 ? 'var(--danger)' : (risk >= 50 ? 'var(--warning)' : 'var(--success)');
+    }
+    const dRiskBar = document.getElementById('drain-risk-bar');
+    if (dRiskBar) {
+      dRiskBar.style.width = Math.min(100, Math.max(0, risk)) + '%';
+      dRiskBar.style.background = risk >= 75 ? 'var(--danger)' : (risk >= 50 ? 'var(--warning)' : 'var(--success)');
     }
   },
 
@@ -199,13 +256,33 @@ const Dashboard = {
 
     const updateBtn = (b) => {
       if (!b) return;
-      b.textContent = isOpen ? '🔒 Tutup Drainase' : '🔓 Buka Drainase';
-      b.className = isOpen ? 'control-btn danger' : 'control-btn success';
+      if (AppState.user?.isDemo) {
+        b.textContent = '🔒 Katup Terkunci (Mode Demo)';
+        b.className = 'control-btn';
+        b.style.opacity = '0.6';
+        b.style.cursor = 'not-allowed';
+      } else {
+        b.textContent = isOpen ? '🔒 Tutup Drainase' : '🔓 Buka Drainase';
+        b.className = isOpen ? 'control-btn danger' : 'control-btn success';
+        b.style.opacity = '1';
+        b.style.cursor = 'pointer';
+      }
       b.disabled = false;
     };
 
     updateBtn(btn1);
     updateBtn(btn2);
+
+    if (AppState.user?.isDemo) {
+      const lockBadge1 = document.getElementById('drainage-demo-lock-1');
+      if (!lockBadge1 && btn1 && btn1.parentElement) {
+        const badge = document.createElement('div');
+        badge.id = 'drainage-demo-lock-1';
+        badge.style.cssText = 'font-size:11px; color:#F6AD55; margin-top:6px; display:flex; align-items:center; gap:4px; font-weight:600;';
+        badge.innerHTML = '<i class="fas fa-lock"></i> Mode Demo: Akses aktuator dibatasi (Read-Only)';
+        btn1.parentElement.appendChild(badge);
+      }
+    }
 
     if (statusEl) {
       statusEl.textContent = isOpen ? 'AKTIF — Katup Terbuka' : 'STANDBY — Katup Tertutup';
@@ -217,74 +294,391 @@ const Dashboard = {
     }
   },
 
-  renderHistoryChart(historyData) {
+  renderHistoryChart(historyData, rangeHours) {
     const ctx = document.getElementById('history-chart');
     if (!ctx) return;
 
     if (this.charts.history) { this.charts.history.destroy(); this.charts.history = null; }
 
-    const labels = historyData.map(d =>
-      new Date(d.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-    );
+    const hours = rangeHours || this.currentHours || 24;
 
+    const labels = historyData.map(d => {
+      const dt = new Date(d.createdAt || d.timestamp);
+      if (isNaN(dt.getTime())) return '--';
+      if (hours <= 24) {
+        return dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      }
+      return dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+    });
+
+    // Stock-style Chart with Crosshair & Rich Tooltip
     this.charts.history = new Chart(ctx, {
       type: 'line',
       data: {
         labels,
         datasets: [
           {
-            label: 'Soil Dangkal (%)',
-            data: historyData.map(d => d.soilDangkal || d.soil1 || 0),
-            borderColor: '#3174B2',
-            backgroundColor: 'rgba(49,116,178,0.08)',
-            borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true
+            label: 'Soil Dangkal (S1) %',
+            data: historyData.map(d => Number((d.soilDangkal || d.soil1 || 0).toFixed(1))),
+            borderColor: '#011F4B',
+            backgroundColor: 'rgba(1, 31, 75, 0.08)',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: '#011F4B',
+            tension: 0.35,
+            fill: true,
+            spanGaps: true
           },
           {
-            label: 'Soil Dalam (%)',
-            data: historyData.map(d => d.soilDalam || d.soil2 || 0),
-            borderColor: '#2A68A7',
-            backgroundColor: 'rgba(42,104,167,0.08)',
-            borderWidth: 2, pointRadius: 0, tension: 0.4, fill: true
+            label: 'Soil Dalam (S2) %',
+            data: historyData.map(d => Number((d.soilDalam || d.soil2 || 0).toFixed(1))),
+            borderColor: '#005B96',
+            backgroundColor: 'rgba(0, 91, 150, 0.08)',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: '#005B96',
+            tension: 0.35,
+            fill: true,
+            spanGaps: true
           },
           {
-            label: 'Kemiringan (°)',
-            data: historyData.map(d => d.magnitude || 0),
-            borderColor: '#F6AD55',
-            backgroundColor: 'rgba(246,173,85,0.08)',
-            borderWidth: 2, pointRadius: 0, tension: 0.4, fill: false
+            label: 'Kemiringan Tilt (°)',
+            data: historyData.map(d => Number((d.magnitude || d.tiltX || 0).toFixed(2))),
+            borderColor: '#D97706',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: '#D97706',
+            tension: 0.35,
+            fill: false,
+            spanGaps: true
           },
           {
-            label: 'Risk Score (%)',
-            data: historyData.map(d => d.riskScore),
+            label: 'Risk Score RF (%)',
+            data: historyData.map(d => Number((d.riskScore != null ? d.riskScore : 0))),
             borderColor: '#E53E3E',
-            backgroundColor: 'rgba(229,62,62,0.04)',
-            borderWidth: 2, pointRadius: 0, tension: 0.4, fill: false
+            backgroundColor: 'rgba(229, 62, 62, 0.05)',
+            borderWidth: 2.5,
+            pointRadius: 0,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: '#E53E3E',
+            tension: 0.35,
+            fill: false,
+            spanGaps: true
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: false,
-        layout: { padding: { bottom: 4 } },
+        resizeDelay: 150,
+        animation: { duration: 250 },
+        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { bottom: 4, top: 4 } },
         plugins: {
           legend: {
             position: 'top',
-            labels: { color: '#294E93', font: { size: 11 }, boxWidth: 20, padding: 16 }
+            labels: {
+              color: '#011F4B',
+              font: { size: 11, weight: '400' },
+              boxWidth: 12,
+              padding: 10
+            }
           },
-          tooltip: { mode: 'index', intersect: false }
+          tooltip: {
+            enabled: true,
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(1, 31, 75, 0.94)',
+            titleColor: '#E2E8F0',
+            titleFont: { size: 11, weight: 'bold' },
+            bodyColor: '#F7FAFC',
+            bodyFont: { size: 11 },
+            borderColor: 'rgba(97, 189, 240, 0.35)',
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 8,
+            boxPadding: 4,
+            usePointStyle: true,
+            callbacks: {
+              title(items) {
+                if (!items || !items.length) return '';
+                const item = historyData[items[0].dataIndex];
+                if (!item) return '';
+                const dt = new Date(item.createdAt || item.timestamp);
+                return dt.toLocaleDateString('id-ID', {
+                  weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+                }) + ' • ' + dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' WIB';
+              },
+              label(context) {
+                const label = context.dataset.label || '';
+                const val = context.parsed.y;
+                if (label.includes('Risk')) {
+                  const status = val >= 75 ? 'BAHAYA' : (val >= 50 ? 'WASPADA' : 'AMAN');
+                  return ` ${label}: ${val}% (${status})`;
+                }
+                if (label.includes('Tilt') || label.includes('Kemiringan')) {
+                  return ` ${label}: ${val.toFixed(2)}°`;
+                }
+                return ` ${label}: ${val.toFixed(1)}%`;
+              }
+            }
+          }
         },
         scales: {
           x: {
-            ticks: { color: '#6497B1', maxTicksLimit: 8, font: { size: 10 } },
-            grid: { color: 'rgba(100,151,177,0.1)' },
+            ticks: {
+              color: '#6497B1',
+              maxTicksLimit: hours > 24 ? 7 : 7,
+              autoSkip: true,
+              maxRotation: 0,
+              minRotation: 0,
+              font: { size: 10, weight: '400' },
+              callback: function(value, index, ticks) {
+                const label = this.getLabelForValue(value);
+                if (index > 0 && ticks[index - 1]) {
+                  const prev = this.getLabelForValue(ticks[index - 1].value);
+                  if (prev === label) return '';
+                }
+                return label;
+              }
+            },
+            grid: { color: 'rgba(100, 151, 177, 0.1)' },
             border: { display: false }
           },
           y: {
-            min: 0, max: 100,
-            ticks: { color: '#6497B1', font: { size: 10 }, stepSize: 25 },
-            grid: { color: 'rgba(100,151,177,0.1)' },
+            min: 0,
+            max: 100,
+            ticks: { color: '#6497B1', font: { size: 10, weight: '400' }, stepSize: 25 },
+            grid: { color: 'rgba(100, 151, 177, 0.1)' },
             border: { display: false }
+          }
+        }
+      }
+    });
+  },
+
+  async loadChartRange(hours, btn) {
+    this.currentHours = hours;
+    if (btn && btn.parentElement) {
+      btn.parentElement.querySelectorAll('.card-action-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    try {
+      const res = await API.get(`/sensor/history?hours=${hours}&limit=1000`);
+      if (res.ok && res.data.data) {
+        this.renderHistoryChart(res.data.data, hours);
+      }
+    } catch (err) {
+      console.error('Error loading chart range:', err);
+    }
+  },
+
+  async setPowerHistoryFilter(days, btn) {
+    this.powerFilterDays = days;
+    if (btn && btn.parentElement) {
+      btn.parentElement.querySelectorAll('.time-filter-btn').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.color = 'var(--text-muted)';
+        b.style.boxShadow = 'none';
+      });
+      btn.classList.add('active');
+      btn.style.background = 'var(--white)';
+      btn.style.color = 'var(--blue-medium)';
+      btn.style.boxShadow = 'var(--shadow-sm)';
+    }
+
+    const hours = (days || 7) * 24;
+    try {
+      const res = await API.get(`/sensor/history?hours=${hours}&limit=1000`);
+      if (res.ok && res.data.data) {
+        this.renderPowerHistoryChart(res.data.data, days);
+        this.renderPowerHistoryTable(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error loading power history:', err);
+    }
+  },
+
+  renderPowerHistoryChart(historyData, days = 7) {
+    const ctx = document.getElementById('power-history-chart');
+    if (!ctx) return;
+
+    if (this.charts.power) { this.charts.power.destroy(); this.charts.power = null; }
+
+    if (!historyData || historyData.length === 0) return;
+
+    // Hitung ringkasan statistik daya
+    let sumVsolar = 0, maxIsolar = 0, lastVaki = 12.6;
+    historyData.forEach(d => {
+      const vs = Number(d.vSolar || 0);
+      const is = Number(d.iSolar || 0);
+      sumVsolar += vs;
+      if (is > maxIsolar) maxIsolar = is;
+      if (d.vAki != null) lastVaki = Number(d.vAki);
+    });
+
+    const avgVsolar = (sumVsolar / historyData.length).toFixed(2);
+    const elVsol = document.getElementById('stat-power-vsolar');
+    const elIsol = document.getElementById('stat-power-isolar');
+    const elVaki = document.getElementById('stat-power-vaki');
+    const elStat = document.getElementById('stat-power-status');
+
+    if (elVsol) elVsol.textContent = avgVsolar + ' V';
+    if (elIsol) elIsol.textContent = maxIsolar + ' mA';
+    if (elVaki) elVaki.textContent = lastVaki.toFixed(2) + ' V';
+    if (elStat) {
+      if (lastVaki < 11.5) {
+        elStat.innerHTML = '<i class="fas fa-triangle-exclamation" style="color:var(--danger)"></i> TEGANGAN DROP (&lt;11.5V)';
+        elStat.style.color = 'var(--danger)';
+      } else if (lastVaki < 12.2) {
+        elStat.innerHTML = '<i class="fas fa-circle-exclamation" style="color:var(--warning)"></i> PERLU PENGISIAN';
+        elStat.style.color = 'var(--warning)';
+      } else {
+        elStat.innerHTML = '<i class="fas fa-circle-check" style="color:#059669"></i> NORMAL &amp; SEHAT';
+        elStat.style.color = '#059669';
+      }
+    }
+
+    const labels = historyData.map(d => {
+      const dt = new Date(d.createdAt || d.timestamp);
+      if (isNaN(dt.getTime())) return '--';
+      if (days <= 1) {
+        return dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      }
+      return dt.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+    });
+
+    this.charts.power = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Tegangan Solar (V)',
+            data: historyData.map(d => Number((d.vSolar || 0).toFixed(2))),
+            borderColor: '#D97706',
+            backgroundColor: 'rgba(217, 119, 6, 0.08)',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            tension: 0.35,
+            fill: true,
+            yAxisID: 'y',
+            spanGaps: true
+          },
+          {
+            label: 'Tegangan Aki (V)',
+            data: historyData.map(d => Number((d.vAki || 12.6).toFixed(2))),
+            borderColor: '#059669',
+            backgroundColor: 'rgba(5, 150, 105, 0.08)',
+            borderWidth: 2,
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            tension: 0.35,
+            fill: true,
+            yAxisID: 'y',
+            spanGaps: true
+          },
+          {
+            label: 'Arus Solar (mA)',
+            data: historyData.map(d => Number(d.iSolar || 0)),
+            borderColor: '#2563EB',
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            borderDash: [3, 3],
+            pointRadius: 0,
+            pointHoverRadius: 5,
+            tension: 0.35,
+            fill: false,
+            yAxisID: 'y1',
+            spanGaps: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        resizeDelay: 150,
+        animation: { duration: 250 },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              color: '#011F4B',
+              font: { size: 11, weight: '400' },
+              boxWidth: 12,
+              padding: 10
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(1, 31, 75, 0.94)',
+            titleColor: '#E2E8F0',
+            borderColor: 'rgba(97, 189, 240, 0.35)',
+            borderWidth: 1,
+            cornerRadius: 8,
+            padding: 10,
+            callbacks: {
+              title(items) {
+                if (!items || !items.length) return '';
+                const item = historyData[items[0].dataIndex];
+                if (!item) return '';
+                const dt = new Date(item.createdAt || item.timestamp);
+                return dt.toLocaleDateString('id-ID', {
+                  weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+                }) + ' • ' + dt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' WIB';
+              },
+              label(item) {
+                const label = item.dataset.label || '';
+                const val = item.parsed.y;
+                if (label.includes('Arus')) return ` ${label}: ${val} mA`;
+                return ` ${label}: ${val.toFixed(2)} Volt`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: {
+              color: '#6497B1',
+              maxTicksLimit: days > 1 ? 7 : 7,
+              autoSkip: true,
+              maxRotation: 0,
+              minRotation: 0,
+              font: { size: 10, weight: '400' },
+              callback: function(value, index, ticks) {
+                const label = this.getLabelForValue(value);
+                if (index > 0 && ticks[index - 1]) {
+                  const prev = this.getLabelForValue(ticks[index - 1].value);
+                  if (prev === label) return '';
+                }
+                return label;
+              }
+            },
+            grid: { color: 'rgba(100, 151, 177, 0.1)' }
+          },
+          y: {
+            position: 'left',
+            min: 0,
+            max: 22,
+            title: { display: true, text: 'Tegangan (V)', color: '#011F4B', font: { size: 10, weight: '400' } },
+            ticks: { color: '#6497B1', font: { size: 10, weight: '400' } },
+            grid: { color: 'rgba(100, 151, 177, 0.1)' }
+          },
+          y1: {
+            position: 'right',
+            min: 0,
+            max: 1500,
+            title: { display: true, text: 'Arus Solar (mA)', color: '#2563EB', font: { size: 10, weight: '400' } },
+            ticks: { color: '#2563EB', font: { size: 10, weight: '400' } },
+            grid: { display: false }
           }
         }
       }
@@ -407,7 +801,7 @@ const Dashboard = {
 
     // Demo mode check
     if (AppState.user?.isDemo) {
-      showToast('🔒 Mode Demo: Perubahan mode tidak berlaku pada akun demo.', 'warning');
+      showToast('🔒 Mode Demo: Akses kontrol fisik/kritis dibatasi (Read-Only). Anda hanya memiliki izin pemantauan.', 'warning');
       this.updateDrainageModeUI(AppState.drainageMode);
       return;
     }
@@ -432,21 +826,24 @@ const Dashboard = {
 
   async setPowerHistoryFilter(days, btn) {
     this.powerFilterDays = days;
-    btn.parentElement.querySelectorAll('.time-filter-btn').forEach(b => {
-      b.classList.remove('active');
-      b.style.background = 'transparent';
-      b.style.color = 'var(--text-muted)';
-      b.style.boxShadow = 'none';
-    });
-    btn.classList.add('active');
-    btn.style.background = 'var(--white)';
-    btn.style.color = 'var(--blue-medium)';
-    btn.style.boxShadow = 'var(--shadow-sm)';
+    if (btn && btn.parentElement) {
+      btn.parentElement.querySelectorAll('.time-filter-btn').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.color = 'var(--text-muted)';
+        b.style.boxShadow = 'none';
+      });
+      btn.classList.add('active');
+      btn.style.background = 'var(--white)';
+      btn.style.color = 'var(--blue-medium)';
+      btn.style.boxShadow = 'var(--shadow-sm)';
+    }
 
     const hours = days * 24;
     try {
       const { ok, data } = await API.get(`/sensor/history?hours=${hours}&limit=1000`);
       if (ok && data.data) {
+        this.renderPowerHistoryChart(data.data, days);
         this.renderPowerHistoryTable(data.data);
       }
     } catch (e) {
@@ -460,6 +857,12 @@ async function toggleDrainage() {
   const role = AppState.user?.role;
   if (role !== 'admin' && role !== 'operator') {
     showToast('Hanya Admin/Operator yang dapat mengontrol drainase', 'warning');
+    return;
+  }
+
+  // Demo user restriction: Read-Only
+  if (AppState.user?.isDemo) {
+    showToast('🔒 Mode Demo: Akses kontrol fisik/kritis dibatasi (Read-Only). Anda hanya memiliki izin pemantauan.', 'warning');
     return;
   }
 
@@ -547,4 +950,9 @@ async function loadDrainageLogs() {
     console.error('Error loading drainage logs:', e);
   }
 }
+
+// Global hook for inline HTML calls
+window.loadChartRange = function(hours, btn) {
+  Dashboard.loadChartRange(hours, btn);
+};
 

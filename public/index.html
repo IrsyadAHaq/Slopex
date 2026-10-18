@@ -285,15 +285,17 @@
                   <div class="card-title">Tren Kelembapan, Kemiringan &amp; Risk Score</div>
                   <div class="card-subtitle">Data real-time dari sensor ESP32 • diperbarui tiap 2 detik</div>
                 </div>
-                <div class="card-actions">
+                <div class="card-actions" style="display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
                   <span class="realtime-badge"><span class="realtime-dot"></span>LIVE</span>
-                  <button class="card-action-btn active" onclick="loadChartRange(1,this)">1J</button>
+                  <button class="card-action-btn" onclick="loadChartRange(1,this)">1J</button>
                   <button class="card-action-btn" onclick="loadChartRange(6,this)">6J</button>
-                  <button class="card-action-btn" onclick="loadChartRange(24,this)">24J</button>
+                  <button class="card-action-btn active" onclick="loadChartRange(24,this)">24J</button>
+                  <button class="card-action-btn" onclick="loadChartRange(168,this)">7H</button>
+                  <button class="card-action-btn" onclick="loadChartRange(336,this)">14H</button>
                 </div>
               </div>
-              <div class="card-body" style="flex:1; display:flex; align-items:center; justify-content:center">
-                <div style="height:200px; width:100%; position:relative"><canvas id="history-chart"></canvas></div>
+              <div class="card-body" style="flex:1; display:flex; align-items:center; justify-content:center; padding:12px;">
+                <div style="height:270px; width:100%; position:relative; min-width:0; overflow:hidden;"><canvas id="history-chart"></canvas></div>
               </div>
             </div>
 
@@ -439,10 +441,12 @@
                   <span class="realtime-badge"><span class="realtime-dot"></span>LIVE</span>
                   <div class="time-filters"
                     style="display:flex; gap:4px; background:var(--bg-secondary); padding:2px; border-radius:var(--radius-md); border:1px solid var(--border-color)">
-                    <button class="time-filter-btn active" onclick="Monitoring.setChartRange('tilt', 6, this)"
-                      style="border:none; background:var(--white); color:var(--blue-medium); border-radius:4px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer; box-shadow:var(--shadow-sm);">6J</button>
-                    <button class="time-filter-btn" onclick="Monitoring.setChartRange('tilt', 24, this)"
-                      style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;">24J</button>
+                    <button class="time-filter-btn" onclick="Monitoring.setChartRange('tilt', 1, this)"
+                      style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;">1J</button>
+                    <button class="time-filter-btn" onclick="Monitoring.setChartRange('tilt', 6, this)"
+                      style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;">6J</button>
+                    <button class="time-filter-btn active" onclick="Monitoring.setChartRange('tilt', 24, this)"
+                      style="border:none; background:var(--white); color:var(--blue-medium); border-radius:4px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer; box-shadow:var(--shadow-sm);">24J</button>
                     <button class="time-filter-btn" onclick="Monitoring.setChartRange('tilt', 168, this)"
                       style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;">7H</button>
                     <button class="time-filter-btn" onclick="Monitoring.setChartRange('tilt', 336, this)"
@@ -451,7 +455,7 @@
                 </div>
               </div>
               <div class="card-body" style="flex:1; display:flex; align-items:center; justify-content:center">
-                <div style="height:220px; width:100%; position:relative"><canvas id="tilt-chart"></canvas></div>
+                <div style="height:220px; width:100%; position:relative; min-width:0; overflow:hidden;"><canvas id="tilt-chart"></canvas></div>
               </div>
             </div>
 
@@ -527,10 +531,12 @@
                 <div style="display:flex; gap:8px; align-items:center; margin-left:auto;">
                   <div class="time-filters"
                     style="display:flex; gap:4px; background:var(--bg-secondary); padding:2px; border-radius:var(--radius-md); border:1px solid var(--border-color)">
-                    <button class="time-filter-btn active" onclick="Monitoring.setChartRange('soil', 6, this)"
-                      style="border:none; background:var(--white); color:var(--blue-medium); border-radius:4px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer; box-shadow:var(--shadow-sm);">6J</button>
-                    <button class="time-filter-btn" onclick="Monitoring.setChartRange('soil', 24, this)"
-                      style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;">24J</button>
+                    <button class="time-filter-btn" onclick="Monitoring.setChartRange('soil', 1, this)"
+                      style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;">1J</button>
+                    <button class="time-filter-btn" onclick="Monitoring.setChartRange('soil', 6, this)"
+                      style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;">6J</button>
+                    <button class="time-filter-btn active" onclick="Monitoring.setChartRange('soil', 24, this)"
+                      style="border:none; background:var(--white); color:var(--blue-medium); border-radius:4px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer; box-shadow:var(--shadow-sm);">24J</button>
                     <button class="time-filter-btn" onclick="Monitoring.setChartRange('soil', 168, this)"
                       style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer;">7H</button>
                     <button class="time-filter-btn" onclick="Monitoring.setChartRange('soil', 336, this)"
@@ -539,7 +545,7 @@
                 </div>
               </div>
               <div class="card-body" style="flex:1; display:flex; align-items:center; justify-content:center">
-                <div style="height:220px; width:100%; position:relative"><canvas id="soil-chart"></canvas></div>
+                <div style="height:220px; width:100%; position:relative; min-width:0; overflow:hidden;"><canvas id="soil-chart"></canvas></div>
               </div>
             </div>
 
@@ -605,244 +611,267 @@
 
         <!-- ==================== DRAINAGE PAGE ==================== -->
         <div class="page-content" id="page-drainage">
-          <div class="drainage-layout">
+          <!-- Row 1: Pusat Kontrol Aktuator Lapangan (Drainase Solenoid & Sirine Darurat) -->
+          <div class="drainage-grid-row">
 
-            <div class="drainage-left">
-              <!-- Control Card -->
-              <div class="card">
-                <div class="card-header">
-                  <div>
-                    <div class="card-title">Kontrol Drainase Manual</div>
-                    <div class="card-subtitle">Solenoid Valve Zona 1 — SLOPEX-001</div>
-                  </div>
-                  <span id="drainage-status-badge" class="summary-status-badge badge-safe">STANDBY</span>
+            <!-- Card 1: Kontrol Drainase Manual (Solenoid) -->
+            <div class="card" style="margin-bottom:0; display:flex; flex-direction:column;">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Kontrol Drainase (Solenoid)</div>
+                  <div class="card-subtitle">Solenoid Valve Zona 1 — SLOPEX-001</div>
                 </div>
-                <div class="card-body" style="text-align:center;padding:28px 20px">
-                  <!-- Mode Toggle (Auto / Manual) -->
-                  <div class="premium-mode-toggle">
-                    <input type="checkbox" id="drainage-mode-checkbox" onchange="Dashboard.toggleDrainageMode()"
-                      style="display:none;">
-                    <div class="toggle-track" onclick="document.getElementById('drainage-mode-checkbox').click()">
-                      <div class="toggle-indicator"></div>
-                      <div class="toggle-option manual-opt"><i class="fas fa-hand-pointer"></i> Manual</div>
-                      <div class="toggle-option auto-opt"><i class="fas fa-robot"></i> Auto (AI)</div>
-                    </div>
-                  </div>
-                  <style>
-                    .premium-mode-toggle {
-                      margin: 0 auto 24px auto;
-                      max-width: 320px;
-                    }
-
-                    .toggle-track {
-                      position: relative;
-                      display: flex;
-                      background: var(--bg-secondary);
-                      border: 1px solid var(--border-color);
-                      border-radius: 30px;
-                      padding: 4px;
-                      cursor: pointer;
-                      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-                    }
-
-                    .toggle-indicator {
-                      position: absolute;
-                      top: 4px;
-                      bottom: 4px;
-                      left: 4px;
-                      width: calc(50% - 4px);
-                      background: var(--navy-dark);
-                      border-radius: 26px;
-                      transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-                      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-                    }
-
-                    #drainage-mode-checkbox:checked~.toggle-track .toggle-indicator {
-                      transform: translateX(100%);
-                      background: var(--success);
-                      box-shadow: 0 2px 6px rgba(72, 187, 120, 0.3);
-                    }
-
-                    .toggle-option {
-                      flex: 1;
-                      text-align: center;
-                      padding: 10px 0;
-                      font-size: 14px;
-                      font-weight: 700;
-                      color: var(--text-muted);
-                      z-index: 1;
-                      transition: color 0.3s;
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      gap: 8px;
-                    }
-
-                    #drainage-mode-checkbox:not(:checked)~.toggle-track .manual-opt {
-                      color: white;
-                    }
-
-                    #drainage-mode-checkbox:checked~.toggle-track .auto-opt {
-                      color: white;
-                    }
-                  </style>
-
-                  <div id="drainage-visual" class="valve-visual closed">
-                    <i class="fas fa-droplet" style="font-size:30px;color:#276749" id="drainage-icon"></i>
-                  </div>
-                  <div id="drainage-status-text-detail" style="font-size:16px;font-weight:700;color:var(--success)">
-                    STANDBY — Katup Tertutup</div>
-                  <div style="font-size:12px;color:var(--text-muted);margin-top:4px;margin-bottom:20px">Zona 1 •
-                    SLOPEX-001</div>
-                  <div id="drainage-page-btn-wrap">
-                    <button id="drainage-main-btn" class="control-btn success" onclick="toggleDrainage()"
-                      style="max-width:280px;margin:0 auto">
-                      <i class="fas fa-unlock"></i> <span>Buka Drainase Zona 1</span>
-                    </button>
-                  </div>
-                  <p id="drainage-auto-note" style="font-size:12px;color:var(--text-muted);margin-top:14px">
-                    Sistem otomatis aktif saat Risk Score ≥ 75%
-                  </p>
-                </div>
+                <span id="drainage-status-badge" class="summary-status-badge badge-safe">STANDBY</span>
               </div>
-
-              <!-- Drainage Log -->
-              <div class="card" style="height:350px; display:flex; flex-direction:column; margin-bottom:0;">
-                <div class="card-header">
-                  <div>
-                    <div class="card-title">Riwayat Aksi Drainase</div>
-                    <div class="card-subtitle">Log otomatis & manual</div>
+              <div class="card-body" style="text-align:center;padding:24px 20px; flex:1; display:flex; flex-direction:column; justify-content:center;">
+                <!-- Mode Toggle (Auto / Manual) -->
+                <div class="premium-mode-toggle">
+                  <input type="checkbox" id="drainage-mode-checkbox" onchange="Dashboard.toggleDrainageMode()"
+                    style="display:none;">
+                  <div class="toggle-track" onclick="document.getElementById('drainage-mode-checkbox').click()">
+                    <div class="toggle-indicator"></div>
+                    <div class="toggle-option manual-opt"><i class="fas fa-hand-pointer"></i> Manual</div>
+                    <div class="toggle-option auto-opt"><i class="fas fa-robot"></i> Auto (AI)</div>
                   </div>
-                  <button class="card-action-btn" onclick="loadDrainageLogs()">
-                    <i class="fas fa-rotate-right"></i> Refresh
+                </div>
+                <style>
+                  .premium-mode-toggle {
+                    margin: 0 auto 20px auto;
+                    max-width: 300px;
+                  }
+
+                  .toggle-track {
+                    position: relative;
+                    display: flex;
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-color);
+                    border-radius: 30px;
+                    padding: 4px;
+                    cursor: pointer;
+                    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+                  }
+
+                  .toggle-indicator {
+                    position: absolute;
+                    top: 4px;
+                    bottom: 4px;
+                    left: 4px;
+                    width: calc(50% - 4px);
+                    background: var(--navy-dark);
+                    border-radius: 26px;
+                    transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+                  }
+
+                  #drainage-mode-checkbox:checked~.toggle-track .toggle-indicator {
+                    transform: translateX(100%);
+                    background: var(--success);
+                    box-shadow: 0 2px 6px rgba(72, 187, 120, 0.3);
+                  }
+
+                  .toggle-option {
+                    flex: 1;
+                    text-align: center;
+                    padding: 8px 0;
+                    font-size: 13px;
+                    font-weight: 700;
+                    color: var(--text-muted);
+                    z-index: 1;
+                    transition: color 0.3s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                  }
+
+                  #drainage-mode-checkbox:not(:checked)~.toggle-track .manual-opt {
+                    color: white;
+                  }
+
+                  #drainage-mode-checkbox:checked~.toggle-track .auto-opt {
+                    color: white;
+                  }
+                </style>
+
+                <div id="drainage-visual" class="valve-visual closed" style="margin-bottom:12px;">
+                  <i class="fas fa-droplet" style="font-size:28px;color:#276749" id="drainage-icon"></i>
+                </div>
+                <div id="drainage-status-text-detail" style="font-size:15px;font-weight:700;color:var(--success)">
+                  STANDBY — Katup Tertutup</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;margin-bottom:16px">Zona 1 • SLOPEX-001</div>
+                <div id="drainage-page-btn-wrap">
+                  <button id="drainage-main-btn" class="control-btn success" onclick="toggleDrainage()"
+                    style="max-width:280px;margin:0 auto">
+                    <i class="fas fa-unlock"></i> <span>Buka Drainase Zona 1</span>
                   </button>
                 </div>
-                <div class="card-body" style="padding:0; flex:1; display:flex; flex-direction:column; overflow:hidden;">
-                  <div class="reports-table-wrap" style="border:none; max-height:290px; overflow-y:auto;">
-                    <table class="reports-table">
-                      <thead>
-                        <tr>
-                          <th>Waktu</th>
-                          <th>Aksi</th>
-                          <th>Oleh</th>
-                          <th>Risk</th>
-                          <th>Alasan</th>
-                        </tr>
-                      </thead>
-                      <tbody id="drainage-log-body">
-                        <tr>
-                          <td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">Memuat log...
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                <p id="drainage-auto-note" style="font-size:11px;color:var(--text-muted);margin-top:12px;margin-bottom:0">
+                  Sistem otomatis aktif saat Risk Score ≥ 75%
+                </p>
+              </div>
+            </div>
+
+            <!-- Card 2: Kontrol Sirine Darurat (Buzzer Alarm Lapangan) -->
+            <div class="card" style="margin-bottom:0; display:flex; flex-direction:column; border-top: 4px solid var(--danger);">
+              <div class="card-header">
+                <div class="card-title" style="display:flex; align-items:center; gap:8px;">
+                  <div style="background:rgba(229,62,62,0.15); color:var(--danger); padding:6px; border-radius:8px; display:flex;">
+                    <i class="fas fa-tower-broadcast"></i>
                   </div>
+                  Kontrol Sirine Darurat
+                </div>
+                <span class="summary-status-badge" style="background:rgba(229,62,62,0.1); color:var(--danger); font-weight:700;">ALARM LAPANGAN</span>
+              </div>
+              <div class="card-body" style="text-align:center; padding:24px 20px; flex:1; display:flex; flex-direction:column; justify-content:center;">
+                <div class="valve-visual" style="background:rgba(229,62,62,0.08); border:3px solid rgba(229,62,62,0.25); margin-bottom:12px;">
+                  <i class="fas fa-bullhorn" style="font-size:28px; color:var(--danger);"></i>
+                </div>
+                <div style="font-size:15px; font-weight:700; color:var(--navy-darkest); margin-bottom:2px;">
+                  Sistem Alarm Lapangan
+                </div>
+                <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Node SLOPEX-001 • Evakuasi Bahaya</div>
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5; max-width: 360px; margin-left:auto; margin-right:auto;">
+                  Ambil alih kendali alarm IoT. Gunakan fitur ini pada saat <strong>kondisi darurat evakuasi</strong> atau untuk mematikan sirine yang sedang menyala.
+                </p>
+
+                <div style="display:flex; flex-direction:column; gap:10px; max-width:280px; margin:0 auto; width:100%;">
+                  <button class="control-btn danger" onclick="kirimPerintah('buzzer')"
+                    style="width:100%; justify-content:center; padding: 11px; font-weight: 600; font-size: 13px; box-shadow: 0 4px 12px rgba(229,62,62,0.25); border-radius: 8px;">
+                    <i class="fas fa-bullhorn" style="margin-right: 6px;"></i> Bunyikan Sirine (Bahaya)
+                  </button>
+                  <button class="control-btn" onclick="kirimPerintah('reset')"
+                    style="width:100%; justify-content:center; background: var(--bg-secondary); color: var(--text-main); border: 1px solid var(--border-color); padding: 10px; font-weight: 600; font-size: 13px; border-radius: 8px; transition: all 0.3s ease;">
+                    <i class="fas fa-power-off" style="margin-right: 6px; color: var(--text-muted);"></i> Matikan Sirine / Reset
+                  </button>
                 </div>
               </div>
-            </div><!-- end drainage-left -->
+            </div>
 
-            <div class="drainage-right">
-              <!-- Sensor Live -->
-              <div class="card">
-                <div class="card-header">
+          </div><!-- end drainage-grid-row 1 -->
+
+          <!-- Row 2: Status Telemetri & Parameter Aturan AI -->
+          <div class="drainage-grid-row">
+
+            <!-- Card 3: Sensor Live -->
+            <div class="card" style="margin-bottom:0;">
+              <div class="card-header">
+                <div>
                   <div class="card-title">Kondisi Sensor Saat Ini</div>
-                  <span class="realtime-badge"><span class="realtime-dot"></span>LIVE</span>
+                  <div class="card-subtitle">Telemetri lapangan realtime • Node SLOPEX-001</div>
                 </div>
-                <div class="card-body">
-                  <div style="margin-bottom:14px">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px">
-                      <span>Kelembapan S1</span><strong id="drain-soil1">--%</strong>
-                    </div>
-                    <div class="risk-bar">
-                      <div class="risk-bar-fill" id="drain-soil1-bar" style="width:0%;background:var(--blue-light)">
-                      </div>
-                    </div>
+                <span class="realtime-badge"><span class="realtime-dot"></span>LIVE</span>
+              </div>
+              <div class="card-body">
+                <div style="margin-bottom:14px">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px">
+                    <span>Kelembapan S1 (Dangkal)</span><strong id="drain-soil1">--%</strong>
                   </div>
-                  <div style="margin-bottom:14px">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px">
-                      <span>Kelembapan S2</span><strong id="drain-soil2">--%</strong>
-                    </div>
-                    <div class="risk-bar">
-                      <div class="risk-bar-fill" id="drain-soil2-bar" style="width:0%;background:var(--blue-medium)">
-                      </div>
-                    </div>
+                  <div class="risk-bar">
+                    <div class="risk-bar-fill" id="drain-soil1-bar" style="width:0%;background:var(--blue-light)"></div>
                   </div>
-                  <div style="margin-bottom:14px">
-                    <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px">
-                      <span>Risk Score</span><strong id="drain-risk" style="color:var(--success)">--%</strong>
-                    </div>
-                    <div class="risk-bar">
-                      <div class="risk-bar-fill" id="drain-risk-bar" style="width:0%;background:var(--success)"></div>
-                    </div>
+                </div>
+                <div style="margin-bottom:14px">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px">
+                    <span>Kelembapan S2 (Dalam)</span><strong id="drain-soil2">--%</strong>
+                  </div>
+                  <div class="risk-bar">
+                    <div class="risk-bar-fill" id="drain-soil2-bar" style="width:0%;background:var(--blue-medium)"></div>
+                  </div>
+                </div>
+                <div style="margin-bottom:14px">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px">
+                    <span>Pergeseran Kemiringan (Tilt)</span><strong id="drain-magnitude">--°</strong>
+                  </div>
+                  <div class="risk-bar">
+                    <div class="risk-bar-fill" id="drain-magnitude-bar" style="width:0%;background:var(--warning)"></div>
+                  </div>
+                </div>
+                <div style="margin-bottom:6px">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:13px">
+                    <span>Risk Score (Random Forest)</span><strong id="drain-risk" style="color:var(--success)">--%</strong>
+                  </div>
+                  <div class="risk-bar">
+                    <div class="risk-bar-fill" id="drain-risk-bar" style="width:0%;background:var(--success)"></div>
                   </div>
                 </div>
               </div>
-              <!-- Threshold Info -->
-              <div class="card" style="flex:none; min-height:max-content;">
-                <div class="card-header">
-                  <div class="card-title">Parameter Otomatis</div>
+            </div>
+
+            <!-- Card 4: Threshold Info & Random Forest Trigger Rules -->
+            <div class="card" style="margin-bottom:0; flex:none; min-height:max-content;">
+              <div class="card-header">
+                <div>
+                  <div class="card-title">Parameter Otomatis (SNI &amp; AI)</div>
+                  <div class="card-subtitle">Ambang batas kendali drainase cerdas</div>
                 </div>
-                <div class="card-body" style="padding-bottom:24px;">
-                  <div class="threshold-row">
-                    <div class="threshold-label">Risk Score Kritis<div class="threshold-desc">Drainase otomatis aktif
-                      </div>
-                    </div>
-                    <div class="threshold-val">75<span
-                        style="font-size:15px; color:var(--text-muted); margin-left:4px;">%</span></div>
+                <span class="nav-badge success" style="font-size:10px;">AI RULE</span>
+              </div>
+              <div class="card-body" style="padding-bottom:18px;">
+                <div class="threshold-row">
+                  <div class="threshold-label">Risk Score Bahaya (Pemicu Buka)
+                    <div class="threshold-desc">Katup solenoid terbuka otomatis (SNI 8235:2017)</div>
                   </div>
-                  <div class="threshold-row">
-                    <div class="threshold-label">Kelembapan Kritis<div class="threshold-desc">Batas atas sensor</div>
-                    </div>
-                    <div class="threshold-val">75<span
-                        style="font-size:15px; color:var(--text-muted); margin-left:4px;">%</span></div>
+                  <div class="threshold-val">≥ 75<span style="font-size:13px; color:var(--text-muted); margin-left:3px;">%</span></div>
+                </div>
+                <div class="threshold-row">
+                  <div class="threshold-label">Kejenuhan Air Kritis (VWC)
+                    <div class="threshold-desc">Tanah jenuh air / mendekati likuifaksi (Bobot 25%)</div>
                   </div>
-                  <div class="threshold-row" style="margin-bottom:0;">
-                    <div class="threshold-label">Kemiringan Kritis<div class="threshold-desc">Batas toleransi lereng
-                      </div>
-                    </div>
-                    <div class="threshold-val">2<span
-                        style="font-size:15px; color:var(--text-muted); margin-left:4px;">°</span></div>
+                  <div class="threshold-val">≥ 75<span style="font-size:13px; color:var(--text-muted); margin-left:3px;">%</span></div>
+                </div>
+                <div class="threshold-row">
+                  <div class="threshold-label">Deformasi Kritis (Tilt ADXL)
+                    <div class="threshold-desc">Pergerakan aktif bidang gelincir (Bobot 10%)</div>
                   </div>
+                  <div class="threshold-val">&gt; 2.0<span style="font-size:13px; color:var(--text-muted); margin-left:3px;">°</span></div>
+                </div>
+                <div class="threshold-row" style="margin-bottom:0;">
+                  <div class="threshold-label">Ambang Penutupan Otomatis
+                    <div class="threshold-desc">Katup menutup kembali saat status lereng AMAN</div>
+                  </div>
+                  <div class="threshold-val">&lt; 50<span style="font-size:13px; color:var(--text-muted); margin-left:3px;">%</span></div>
+                </div>
+
+                <div style="margin-top:14px; padding:10px 12px; background:rgba(3,57,108,0.05); border-left:3px solid var(--blue-medium); border-radius:var(--radius-sm); font-size:11px; color:var(--text-muted); line-height:1.5;">
+                  <i class="fas fa-robot" style="color:var(--blue-medium); margin-right:4px;"></i>
+                  Sistem otomasi digerakkan oleh inferensi model <strong>Random Forest</strong> yang mengintegrasikan Slope Lereng (35%), Curah Hujan (30%), VWC (25%), dan Tilt (10%).
                 </div>
               </div>
-              <!-- Downlink Control -->
-              <div class="card" style="border-top: 4px solid var(--danger);">
-                <div class="card-header" style="border-bottom: none; padding-bottom: 0;">
-                  <div class="card-title" style="display:flex; align-items:center; gap:8px;">
-                    <div
-                      style="background:rgba(229,62,62,0.15); color:var(--danger); padding:6px; border-radius:8px; display:flex;">
-                      <i class="fas fa-tower-broadcast"></i>
-                    </div>
-                    Kontrol Sirine Darurat
-                  </div>
-                </div>
-                <div class="card-body">
-                  <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
-                    Ambil alih kendali alarm di lapangan. Gunakan fitur ini secara bijak hanya pada saat terjadi
-                    <strong>kondisi darurat</strong> atau untuk mematikan sirine yang sedang menyala.
-                  </p>
+            </div>
 
-                  <div style="display:flex; flex-direction:column; gap:12px;">
-                    <button class="control-btn danger" onclick="kirimPerintah('buzzer')"
-                      style="width:100%; justify-content:center; padding: 12px; font-weight: 600; font-size: 14px; box-shadow: 0 4px 12px rgba(229,62,62,0.25); border-radius: 8px;">
-                      <i class="fas fa-bullhorn" style="margin-right: 6px;"></i> Bunyikan Sirine (Bahaya)
-                    </button>
-                    <button class="control-btn" onclick="kirimPerintah('reset')"
-                      style="width:100%; justify-content:center; background: var(--bg-secondary); color: var(--text-main); border: 1px solid var(--border-color); padding: 12px; font-weight: 600; font-size: 14px; border-radius: 8px; transition: all 0.3s ease;">
-                      <i class="fas fa-power-off" style="margin-right: 6px; color: var(--text-muted);"></i> Matikan
-                      Sirine / Reset
-                    </button>
-                  </div>
+          </div><!-- end drainage-grid-row 2 -->
 
-                  <style>
-                    .control-btn:not(.danger):hover {
-                      background: var(--border-color) !important;
-                    }
-                  </style>
-                </div>
+          <!-- Row 3: Riwayat Aksi Drainase (Lebar Penuh / Full Width) -->
+          <div class="card" style="margin-bottom:0;">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Riwayat Aksi Drainase &amp; Kontrol</div>
+                <div class="card-subtitle">Log otomatis &amp; manual lapangan</div>
               </div>
-            </div><!-- end drainage-right -->
-
+              <button class="card-action-btn" onclick="loadDrainageLogs()">
+                <i class="fas fa-rotate-right"></i> Refresh
+              </button>
+            </div>
+            <div class="card-body" style="padding:0; overflow:hidden;">
+              <div class="reports-table-wrap" style="border:none; max-height:300px; overflow-y:auto;">
+                <table class="reports-table">
+                  <thead>
+                    <tr>
+                      <th>Waktu</th>
+                      <th>Aksi</th>
+                      <th>Oleh</th>
+                      <th>Risk</th>
+                      <th>Alasan</th>
+                    </tr>
+                  </thead>
+                  <tbody id="drainage-log-body">
+                    <tr>
+                      <td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">Memuat log...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -953,56 +982,91 @@
             <div class="card">
               <div class="card-header" style="flex-wrap:wrap; gap:12px;">
                 <div>
-                  <div class="card-title">Riwayat Data Sensor</div>
-                  <div class="card-subtitle" id="history-subtitle">Data 1 Hari Terakhir</div>
+                  <div class="card-title">Riwayat Log Geoteknik &amp; AI Sensor</div>
+                  <div class="card-subtitle" id="history-subtitle">Menampilkan data 1 hari terakhir • Aligned dengan SNI 8235:2017</div>
                 </div>
                 <div class="card-actions" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                  <!-- Rentang Cepat -->
                   <div class="time-filters"
-                    style="display:flex; gap:4px; margin-right:8px; background:var(--bg-secondary); padding:4px; border-radius:var(--radius-md); border:1px solid var(--border)">
+                    style="display:flex; gap:4px; background:var(--bg-secondary); padding:4px; border-radius:var(--radius-md); border:1px solid var(--border)">
                     <button class="time-filter-btn active" onclick="Monitoring.setHistoryFilter(1, this)"
-                      style="border:none; background:var(--white); color:var(--blue-medium); border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; box-shadow:var(--shadow-sm); transition:all 0.2s;">1
-                      Hari</button>
+                      style="border:none; background:var(--white); color:var(--blue-medium); border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; box-shadow:var(--shadow-sm); transition:all 0.2s;">1 Hari</button>
                     <button class="time-filter-btn" onclick="Monitoring.setHistoryFilter(7, this)"
-                      style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s;">7
-                      Hari</button>
+                      style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s;">7 Hari</button>
                     <button class="time-filter-btn" onclick="Monitoring.setHistoryFilter(14, this)"
-                      style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s;">14
-                      Hari</button>
+                      style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s;">14 Hari</button>
                   </div>
-                  <button class="card-action-btn" onclick="Monitoring.renderSensorTable('reports-table-body')">
-                    <i class="fas fa-rotate-right"></i> Refresh
+
+                  <!-- Date Picker Filter -->
+                  <div style="display:flex; align-items:center; gap:6px; background:var(--bg-secondary); padding:5px 10px; border-radius:var(--radius-md); border:1px solid var(--border)">
+                    <i class="fas fa-calendar-day" style="color:var(--blue-medium); font-size:12px;"></i>
+                    <input type="date" id="reports-date-filter" onchange="Monitoring.onDateFilterChange(this.value)"
+                      style="border:none; background:transparent; color:var(--text-primary); font-size:12px; outline:none; cursor:pointer;" title="Pilih Tanggal Spesifik">
+                  </div>
+
+                  <!-- Status Filter -->
+                  <select id="reports-status-filter" onchange="Monitoring.onStatusFilterChange(this.value)"
+                    style="background:var(--bg-secondary); border:1px solid var(--border); color:var(--text-primary); border-radius:var(--radius-md); padding:6px 10px; font-size:12px; outline:none; cursor:pointer;">
+                    <option value="ALL">Semua Status</option>
+                    <option value="BAHAYA">Bahaya (≥75%)</option>
+                    <option value="WASPADA">Waspada (50-74%)</option>
+                    <option value="AMAN">Aman (&lt;50%)</option>
+                  </select>
+
+                  <button class="card-action-btn" onclick="Monitoring.renderSensorTable()" title="Segarkan Data">
+                    <i class="fas fa-rotate-right"></i>
                   </button>
-                  <button class="card-action-btn" onclick="exportData()">
-                    <i class="fas fa-download"></i> Export JSON
-                  </button>
-                  <button class="card-action-btn" onclick="exportCSV()">
-                    <i class="fas fa-file-csv"></i> Export CSV
+                  <button class="card-action-btn" onclick="openExportModal()" style="background:var(--blue-medium); color:#fff; border-color:var(--blue-medium)">
+                    <i class="fas fa-file-export" style="margin-right:4px;"></i> Export Data
                   </button>
                 </div>
               </div>
+
               <div class="card-body" style="padding:0">
-                <div class="reports-table-wrap"
-                  style="border:none; max-height:650px; min-height:480px; overflow-y:auto;">
+                <div class="reports-table-wrap" style="border:none; min-height:360px; overflow-x:auto;">
                   <table class="reports-table">
-                    <thead
-                      style="position:sticky; top:0; z-index:10; background:var(--bg-secondary); box-shadow:0 1px 0 var(--border);">
+                    <thead style="position:sticky; top:0; z-index:10; background:var(--bg-secondary); box-shadow:0 1px 0 var(--border);">
                       <tr>
-                        <th>Waktu</th>
-                        <th>Soil Dangkal</th>
-                        <th>Soil Dalam</th>
-                        <th>Magnitude</th>
-                        <th>Risk</th>
+                        <th>WAKTU &amp; TANGGAL</th>
+                        <th>SOIL DANGKAL</th>
+                        <th>SOIL DALAM</th>
+                        <th>VWC TANAH</th>
+                        <th>TILT ADXL345</th>
+                        <th>CURAH HUJAN</th>
+                        <th>RISK SCORE</th>
+                        <th>STATUS LERENG</th>
+                        <th>STATUS RELAY</th>
                       </tr>
                     </thead>
                     <tbody id="reports-table-body">
                       <tr>
-                        <td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px">
+                        <td colspan="9" style="text-align:center;color:var(--text-muted);padding:32px">
                           <i class="fas fa-spinner fa-spin" style="font-size:20px;margin-bottom:8px;display:block"></i>
-                          Memuat data...
+                          Memuat data riwayat...
                         </td>
                       </tr>
                     </tbody>
                   </table>
+                </div>
+
+                <!-- Pagination Footer -->
+                <div class="reports-pagination-bar">
+                  <div id="reports-pagination-info">Menampilkan 0 - 0 dari 0 data</div>
+                  <div class="reports-page-controls">
+                    <button class="page-btn" id="btn-page-first" onclick="Monitoring.goToPage(1)" title="Halaman Pertama">
+                      <i class="fas fa-angles-left"></i>
+                    </button>
+                    <button class="page-btn" id="btn-page-prev" onclick="Monitoring.changePage(-1)" title="Sebelumnya">
+                      <i class="fas fa-chevron-left"></i> Prev
+                    </button>
+                    <span style="font-weight:600; padding:0 8px; color:var(--text-primary);" id="reports-page-current">Hal 1 dari 1</span>
+                    <button class="page-btn" id="btn-page-next" onclick="Monitoring.changePage(1)" title="Berikutnya">
+                      Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button class="page-btn" id="btn-page-last" onclick="Monitoring.goToLastPage()" title="Halaman Terakhir">
+                      <i class="fas fa-angles-right"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1225,27 +1289,52 @@
               <!-- Riwayat Daya (Aki & Solar) -->
               <div class="dev-info-section" style="margin-top: 20px;">
                 <div
-                  style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                  <h4 class="dev-section-title" style="margin-bottom: 0;"><i class="fas fa-history"></i> Riwayat Daya
-                    (Aki & Solar Panel)</h4>
+                  style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                  <div>
+                    <h4 class="dev-section-title" style="margin-bottom: 2px;"><i class="fas fa-bolt" style="color:#D97706"></i> Monitoring Telemetri Daya (Aki &amp; Solar Panel)</h4>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0;">Visualisasi grafik fluktuasi tegangan dan arus pengisian daya harian</p>
+                  </div>
                   <div style="display:flex; gap:8px; align-items:center;">
                     <div class="time-filters"
                       style="display:flex; gap:4px; background:var(--bg-secondary); padding:4px; border-radius:var(--radius-md); border:1px solid var(--border-color)">
-                      <button class="time-filter-btn active" onclick="Dashboard.setPowerHistoryFilter(1, this)"
-                        style="border:none; background:var(--white); color:var(--blue-medium); border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; box-shadow:var(--shadow-sm);">1
-                        Hari</button>
-                      <button class="time-filter-btn" onclick="Dashboard.setPowerHistoryFilter(7, this)"
-                        style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer;">7
-                        Hari</button>
+                      <button class="time-filter-btn" onclick="Dashboard.setPowerHistoryFilter(1, this)"
+                        style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer;">1 Hari</button>
+                      <button class="time-filter-btn active" onclick="Dashboard.setPowerHistoryFilter(7, this)"
+                        style="border:none; background:var(--white); color:var(--blue-medium); border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; box-shadow:var(--shadow-sm);">7 Hari</button>
                       <button class="time-filter-btn" onclick="Dashboard.setPowerHistoryFilter(14, this)"
-                        style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer;">14
-                        Hari</button>
+                        style="border:none; background:transparent; color:var(--text-muted); border-radius:4px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer;">14 Hari</button>
                     </div>
                     <button class="card-action-btn" onclick="Dashboard.exportPowerHistoryCSV()">
                       <i class="fas fa-file-csv"></i> Export CSV
                     </button>
                   </div>
                 </div>
+
+                <!-- Power Summary Stats Row -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-bottom:14px;">
+                  <div style="background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:10px 14px;">
+                    <div style="font-size:11px; color:var(--text-muted); font-weight:600;">TEGANGAN SOLAR (AVG)</div>
+                    <div style="font-size:17px; font-weight:700; color:#D97706; margin-top:2px;" id="stat-power-vsolar">-- V</div>
+                  </div>
+                  <div style="background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:10px 14px;">
+                    <div style="font-size:11px; color:var(--text-muted); font-weight:600;">ARUS SOLAR MAKSIMUM</div>
+                    <div style="font-size:17px; font-weight:700; color:#2563EB; margin-top:2px;" id="stat-power-isolar">-- mA</div>
+                  </div>
+                  <div style="background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:10px 14px;">
+                    <div style="font-size:11px; color:var(--text-muted); font-weight:600;">TEGANGAN AKI (STABIL)</div>
+                    <div style="font-size:17px; font-weight:700; color:#059669; margin-top:2px;" id="stat-power-vaki">-- V</div>
+                  </div>
+                  <div style="background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:10px 14px;">
+                    <div style="font-size:11px; color:var(--text-muted); font-weight:600;">STATUS KESEHATAN DAYA</div>
+                    <div style="font-size:13px; font-weight:700; color:#059669; margin-top:4px;" id="stat-power-status"><i class="fas fa-circle-check"></i> NORMAL &amp; SEHAT</div>
+                  </div>
+                </div>
+
+                <!-- Power Chart Container -->
+                <div style="height: 250px; width: 100%; position: relative; margin-bottom: 14px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px;">
+                  <canvas id="power-history-chart"></canvas>
+                </div>
+
                 <div class="reports-table-wrap"
                   style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md);">
                   <table class="reports-table">
@@ -1628,7 +1717,7 @@
       try {
         const { ok, data } = await API.get(`/sensor/history?hours=${hours}&limit=1000`);
         if (ok && data.data && data.data.length > 0) {
-          Dashboard.renderHistoryChart(data.data);
+          Dashboard.renderHistoryChart(data.data, hours);
         }
       } catch (e) {
         console.error('Chart range load error:', e);
@@ -1647,6 +1736,10 @@
     }
 
     function markAllRead() {
+      if (AppState.user?.isDemo) {
+        showToast('🔒 Mode Demo: Akses dibatasi (Read-Only).', 'warning');
+        return;
+      }
       document.querySelectorAll('.notif-item').forEach(n => n.classList.remove('unread'));
       // Mark all in local state
       if (AppState.alerts) AppState.alerts.forEach(a => a.acknowledged = true);
@@ -1843,6 +1936,76 @@
     </div>
   </div>
 
+  <!-- ==================== EXPORT DATA MODAL ==================== -->
+  <div class="export-modal-overlay" id="export-modal-overlay" onclick="if(event.target===this) closeExportModal()">
+    <div class="export-modal-card">
+      <div class="export-modal-header">
+        <h3><i class="fas fa-file-export"></i> Export Data Sensor SLOPEX</h3>
+        <i class="fas fa-xmark" style="cursor:pointer; font-size:18px; opacity:0.8;" onclick="closeExportModal()"></i>
+      </div>
+      <div class="export-modal-body">
+        <div class="export-opt-group">
+          <label class="export-opt-label"><i class="fas fa-clock" style="margin-right:6px; color:var(--blue-medium);"></i>Pilih Rentang Waktu Data</label>
+          <div class="export-radio-grid">
+            <label class="export-radio-card">
+              <input type="radio" name="export-range" value="24" checked onchange="toggleCustomExportDate(false)">
+              <span>24 Jam Terakhir</span>
+            </label>
+            <label class="export-radio-card">
+              <input type="radio" name="export-range" value="168" onchange="toggleCustomExportDate(false)">
+              <span>7 Hari Terakhir</span>
+            </label>
+            <label class="export-radio-card">
+              <input type="radio" name="export-range" value="336" onchange="toggleCustomExportDate(false)">
+              <span>14 Hari Terakhir</span>
+            </label>
+            <label class="export-radio-card">
+              <input type="radio" name="export-range" value="custom" onchange="toggleCustomExportDate(true)">
+              <span>Rentang Kustom</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="export-opt-group" id="export-custom-dates" style="display:none; background:var(--bg-secondary); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border-color);">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:11px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:4px;">Dari Tanggal</label>
+              <input type="date" id="export-date-from" style="width:100%; padding:6px 8px; border:1px solid var(--border-color); border-radius:4px; font-size:12px;">
+            </div>
+            <div>
+              <label style="font-size:11px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:4px;">Sampai Tanggal</label>
+              <input type="date" id="export-date-to" style="width:100%; padding:6px 8px; border:1px solid var(--border-color); border-radius:4px; font-size:12px;">
+            </div>
+          </div>
+        </div>
+
+        <div class="export-opt-group">
+          <label class="export-opt-label"><i class="fas fa-file-code" style="margin-right:6px; color:var(--blue-medium);"></i>Format Berkas</label>
+          <div class="export-radio-grid">
+            <label class="export-radio-card">
+              <input type="radio" name="export-format" value="json" checked>
+              <span><strong>JSON</strong> (Lengkap AI &amp; RF)</span>
+            </label>
+            <label class="export-radio-card">
+              <input type="radio" name="export-format" value="csv">
+              <span><strong>CSV</strong> (Tabel Excel)</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="font-size:12px; color:var(--text-muted); line-height:1.5; background:rgba(3,57,108,0.05); padding:10px 12px; border-radius:var(--radius-sm); border-left:3px solid var(--blue-medium);">
+          <i class="fas fa-circle-info" style="color:var(--blue-medium); margin-right:4px;"></i>
+          Berkas yang diunduh mencakup parameter sensor geoteknik (S1, S2, VWC, Tilt, Curah Hujan), telemetri daya aki &amp; panel surya, serta hasil klasifikasi Random Forest.
+        </div>
+      </div>
+      <div class="export-modal-footer">
+        <button class="page-btn" onclick="closeExportModal()">Batal</button>
+        <button class="page-btn" onclick="executeExportDownload()" style="background:var(--blue-medium); color:#fff; border-color:var(--blue-medium); padding:8px 16px;">
+          <i class="fas fa-download"></i> Unduh Sekarang
+        </button>
+      </div>
+    </div>
+  </div>
 
 </body>
 

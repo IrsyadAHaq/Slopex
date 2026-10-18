@@ -162,21 +162,16 @@ const loraController = {
                     return res.status(403).json({ success: false, error: 'Akses ditolak. Role Viewer tidak dapat mengontrol sirine.' });
                 }
                 if (user && user.isDemo) {
-                    isDemo = true;
-                    console.log(`[DOWNLINK] ⚠️  Akun DEMO terdeteksi (${user.email}). Perintah TIDAK dikirim ke hardware.`);
+                    console.log(`[DOWNLINK] 🔒 Akun DEMO (${user.email}). Perintah downlink diblokir (403).`);
+                    return res.status(403).json({
+                        success: false,
+                        isDemo: true,
+                        message: '🔒 Mode Demo: Pengiriman perintah ke hardware dibatasi (Read-Only).'
+                    });
                 }
             }
         } catch (e) {
             // Token tidak valid / tidak ada — lanjut
-        }
-
-        // Jika demo, balas sukses tapi tidak kirim ke ChirpStack
-        if (isDemo) {
-            return res.status(200).json({
-                success: true,
-                demoMode: true,
-                message: `[DEMO] Perintah '${aksi}' diterima — tidak dikirim ke alat (mode demonstrasi).`
-            });
         }
 
         let dataBase64 = "";

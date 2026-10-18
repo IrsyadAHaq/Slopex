@@ -16,8 +16,19 @@ if (!fs.existsSync(DATA_DIR)) {
 
 // ===== FILE SAVE ENGINES =====
 const saveTimers = {};
+let isDbLoaded = false;
+
+function ensureLoaded() {
+  if (!isDbLoaded) {
+    for (const col of Object.keys(DB.memoryDb)) {
+      DB.memoryDb[col] = loadCollection(col);
+    }
+    isDbLoaded = true;
+  }
+}
 
 function saveImmediately(collection) {
+  ensureLoaded();
   if (saveTimers[collection]) {
     clearTimeout(saveTimers[collection]);
     delete saveTimers[collection];
@@ -39,10 +50,15 @@ function scheduleSave(collection) {
 }
 
 function flushAllSaves() {
+  if (!isDbLoaded) return;
   for (const collection of Object.keys(DB.memoryDb)) {
     try {
       const filePath = path.join(DATA_DIR, collection + '.json');
       const data = DB.memoryDb[collection] || [];
+      if (data.length === 0 && fs.existsSync(filePath)) {
+        const stat = fs.statSync(filePath);
+        if (stat.size > 10) continue; // Lindungi file dari penimpaan array kosong tidak sengaja
+      }
       fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
     } catch (e) {
       console.error(`[DB] Flush error for ${collection}:`, e.message);
@@ -75,6 +91,7 @@ function connectDB() {
   for (const col of Object.keys(DB.memoryDb)) {
     DB.memoryDb[col] = loadCollection(col);
   }
+  isDbLoaded = true;
   const counts = Object.entries(DB.memoryDb).map(([k, v]) => `${k}: ${v.length}`).join(', ');
   console.log('\n[DB] Database lokal dimuat dari file JSON.');
   console.log(`[DB] ${counts}`);
@@ -85,10 +102,30 @@ function matchesFilter(item, filter = {}) {
   for (const [key, val] of Object.entries(filter)) {
     if (val === undefined || val === null) continue;
     if (typeof val === 'object' && !Array.isArray(val)) {
-      if ('$gte' in val && !(item[key] >= val.$gte)) return false;
-      if ('$lte' in val && !(item[key] <= val.$lte)) return false;
-      if ('$ne' in val && item[key] === val.$ne) return false;
-      if ('$in' in val && !val.$in.includes(item[key])) return false;
+      const itemVal = item[key];
+      const isDateComparison = (key === 'createdAt' || key === 'updatedAt' || key === 'timestamp') &&
+                               (typeof itemVal === 'string' || typeof itemVal === 'number');
+
+      if ('$gte' in val) {
+        if (isDateComparison) {
+          const itemTime = new Date(itemVal).getTime();
+          const targetTime = new Date(val.$gte).getTime();
+          if (isNaN(itemTime) || isNaN(targetTime) || itemTime < targetTime) return false;
+        } else if (!(itemVal >= val.$gte)) {
+          return false;
+        }
+      }
+      if ('$lte' in val) {
+        if (isDateComparison) {
+          const itemTime = new Date(itemVal).getTime();
+          const targetTime = new Date(val.$lte).getTime();
+          if (isNaN(itemTime) || isNaN(targetTime) || itemTime > targetTime) return false;
+        } else if (!(itemVal <= val.$lte)) {
+          return false;
+        }
+      }
+      if ('$ne' in val && itemVal === val.$ne) return false;
+      if ('$in' in val && !val.$in.includes(itemVal)) return false;
     } else {
       if (item[key] !== val) return false;
     }
@@ -106,6 +143,7 @@ const DB = {
   },
 
   find(collection, filter = {}, opts = {}) {
+    ensureLoaded();
     let docs = (this.memoryDb[collection] || []).filter(d => matchesFilter(d, filter));
     if (opts.sort) {
       const [field, dir] = Object.entries(opts.sort)[0];
@@ -129,14 +167,17 @@ const DB = {
   },
 
   findOne(collection, filter = {}) {
+    ensureLoaded();
     return (this.memoryDb[collection] || []).find(d => matchesFilter(d, filter)) || null;
   },
 
   findById(collection, id) {
+    ensureLoaded();
     return (this.memoryDb[collection] || []).find(d => d.id === id) || null;
   },
 
   async insert(collection, data) {
+    ensureLoaded();
     const doc = {
       id: data.id || uuidv4(),
       ...data,
@@ -150,6 +191,7 @@ const DB = {
   },
 
   async insertMany(collection, dataArray) {
+    ensureLoaded();
     const docs = dataArray.map(d => ({
       id: d.id || uuidv4(),
       ...d,
@@ -163,6 +205,7 @@ const DB = {
   },
 
   async updateById(collection, id, updates) {
+    ensureLoaded();
     const arr = this.memoryDb[collection] || [];
     const idx = arr.findIndex(d => d.id === id);
     if (idx === -1) return null;
@@ -172,6 +215,7 @@ const DB = {
   },
 
   async updateMany(collection, filter, updates) {
+    ensureLoaded();
     const arr = this.memoryDb[collection] || [];
     let count = 0;
     arr.forEach((d, i) => {
@@ -185,6 +229,7 @@ const DB = {
   },
 
   async deleteById(collection, id) {
+    ensureLoaded();
     const arr = this.memoryDb[collection] || [];
     const idx = arr.findIndex(d => d.id === id);
     if (idx !== -1) {
@@ -196,6 +241,7 @@ const DB = {
   },
 
   async deleteMany(collection, filter = {}) {
+    ensureLoaded();
     const arr = this.memoryDb[collection] || [];
     const before = arr.length;
     this.memoryDb[collection] = arr.filter(d => !matchesFilter(d, filter));
@@ -205,10 +251,12 @@ const DB = {
   },
 
   count(collection, filter = {}) {
+    ensureLoaded();
     return (this.memoryDb[collection] || []).filter(d => matchesFilter(d, filter)).length;
   },
 
   async clear(collection) {
+    ensureLoaded();
     this.memoryDb[collection] = [];
     scheduleSave(collection);
   }

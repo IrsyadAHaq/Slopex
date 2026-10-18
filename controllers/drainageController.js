@@ -26,11 +26,11 @@ const setMode = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Mode harus "auto" atau "manual".' });
 
     if (req.user?.isDemo) {
-      console.log(`[DRAINAGE] ⚠️  Akun DEMO (${req.user.email}). Perubahan mode diabaikan.`);
-      return res.json({
-        success: true,
-        demoMode: true,
-        message: `[DEMO] Perubahan mode diabaikan pada akun demo.`,
+      console.log(`[DRAINAGE] 🔒 Akun DEMO (${req.user.email}). Perubahan mode diblokir (403).`);
+      return res.status(403).json({
+        success: false,
+        isDemo: true,
+        message: '🔒 Mode Demo: Akses kontrol fisik/kritis dibatasi (Read-Only). Anda hanya memiliki izin pemantauan.',
         mode: drainageState.mode
       });
     }
@@ -61,14 +61,13 @@ const control = async (req, res) => {
     if (!['open', 'close'].includes(action))
       return res.status(400).json({ success: false, message: 'Action harus "open" atau "close".' });
 
-    // ===== DEMO MODE: Skip semua side effects =====
-    // Akun demo tidak menyimpan log, tidak ubah state, tidak emit socket, tidak kirim ke alat
+    // ===== DEMO MODE: Blocked with 403 =====
     if (req.user?.isDemo) {
-      console.log(`[DRAINAGE-CONTROL] ⚠️  Akun DEMO (${req.user.email}). Aksi '${action}' DIABAIKAN — tidak ada log, state, atau downlink yang diubah.`);
-      return res.json({
-        success: true,
-        demoMode: true,
-        message: `[DEMO] Simulasi aksi drainase diterima — tidak ada perubahan nyata pada sistem atau riwayat.`,
+      console.log(`[DRAINAGE-CONTROL] 🔒 Akun DEMO (${req.user.email}). Aksi '${action}' DITOLAK (403).`);
+      return res.status(403).json({
+        success: false,
+        isDemo: true,
+        message: '🔒 Mode Demo: Akses kontrol fisik/kritis dibatasi (Read-Only). Anda hanya memiliki izin pemantauan.',
         state: drainageState
       });
     }
