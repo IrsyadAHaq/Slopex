@@ -45,12 +45,12 @@ async function startDeploy() {
                     : 'mkdir -p /tmp/slopex_data_backup && (cp -r ~/slopex-web/web/data/* /tmp/slopex_data_backup/ 2>/dev/null || cp -r ~/slopex-app/data/* /tmp/slopex_data_backup/ 2>/dev/null || true)',
 
                 // 3. Detect UID:GID and clean up slopex-app
-                'docker run --rm -v /home/slopex:/target node:20-bullseye sh -c "OWNER=\\$(stat -c \'%u:%g\' /target) && rm -rf /target/slopex-app && mkdir -p /target/slopex-web/web && chown -R \\$OWNER /target/slopex-web"',
+                'docker run --rm -v /home/slopex:/target node:20-bookworm sh -c "OWNER=\\$(stat -c \'%u:%g\' /target) && rm -rf /target/slopex-app && mkdir -p /target/slopex-web/web && chown -R \\$OWNER /target/slopex-web"',
                 'mv ~/slopex.zip ~/slopex-web/web/',
                 'cd ~/slopex-web/web',
 
                 // 4. Clean up old code files EXCLUDING data/ and whatsapp-bot/.wwebjs_auth
-                'docker run --rm -v /home/slopex/slopex-web/web:/target node:20-bullseye sh -c "OWNER=\\$(stat -c \'%u:%g\' /target) && mkdir -p /target/whatsapp-bot /target/data && chown -R \\$OWNER /target /target/whatsapp-bot /target/data && chmod 777 /target/whatsapp-bot /target/data && rm -rf /target/config /target/controllers /target/middleware /target/models /target/public /target/routes /target/utils /target/server.js /target/package.json /target/package-lock.json /target/Dockerfile /target/docker-compose.yml /target/.dockerignore /target/.env /target/whatsapp-bot/index.js /target/test-model.js"',
+                'docker run --rm -v /home/slopex/slopex-web/web:/target node:20-bookworm sh -c "OWNER=\\$(stat -c \'%u:%g\' /target) && mkdir -p /target/whatsapp-bot /target/data && chown -R \\$OWNER /target /target/whatsapp-bot /target/data && chmod 777 /target/whatsapp-bot /target/data && rm -rf /target/config /target/controllers /target/middleware /target/models /target/public /target/routes /target/utils /target/server.js /target/package.json /target/package-lock.json /target/Dockerfile /target/docker-compose.yml /target/.dockerignore /target/.env /target/whatsapp-bot/index.js /target/test-model.js"',
 
                 // 5. Restore data files from backup or start fresh
                 RESET_DATA

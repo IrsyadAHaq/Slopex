@@ -1,4 +1,4 @@
-FROM node:20-bullseye
+FROM node:20-bookworm
 
 # Install chromium for whatsapp-web.js in Docker
 RUN apt-get update && apt-get install -y \
