@@ -232,6 +232,47 @@ const Dashboard = {
       dRiskBar.style.width = Math.min(100, Math.max(0, risk)) + '%';
       dRiskBar.style.background = risk >= 75 ? 'var(--danger)' : (risk >= 50 ? 'var(--warning)' : 'var(--success)');
     }
+
+    // Geotechnical & Node Telemetry Support Fields
+    const dVwc = document.getElementById('drain-vwc');
+    if (dVwc) dVwc.textContent = (sensor.vwc != null ? Number(sensor.vwc).toFixed(1) : ((s1 + s2) / 2).toFixed(1)) + '%';
+
+    const dRain = document.getElementById('drain-rainfall');
+    if (dRain) dRain.textContent = (sensor.rainfall != null ? Math.round(sensor.rainfall).toLocaleString('id-ID') : '1.100') + ' mm/h';
+
+    const dVaki = document.getElementById('drain-vaki');
+    if (dVaki) dVaki.textContent = (sensor.vAki != null ? Number(sensor.vAki).toFixed(2) : '12.60') + ' V';
+
+    const dAiStatus = document.getElementById('drain-ai-status-text');
+    const dRiskGap = document.getElementById('drain-risk-gap');
+    const dAiCallout = document.getElementById('drain-ai-callout');
+    if (dAiStatus) {
+      if (risk >= 75) {
+        dAiStatus.textContent = 'BAHAYA KRITIS — Katup Drainase Terbuka Otomatis';
+        dAiStatus.style.color = 'var(--danger)';
+        if (dRiskGap) dRiskGap.textContent = 'AMBANG TERCAPAI (≥75%)';
+        if (dAiCallout) {
+          dAiCallout.style.background = 'rgba(229,62,62,0.08)';
+          dAiCallout.style.borderLeftColor = 'var(--danger)';
+        }
+      } else if (risk >= 50) {
+        dAiStatus.textContent = 'WASPADA — Siaga Penuh Menjelang Pemicu';
+        dAiStatus.style.color = 'var(--warning)';
+        if (dRiskGap) dRiskGap.textContent = `+${Math.max(0, 75 - risk)}% menuju 75%`;
+        if (dAiCallout) {
+          dAiCallout.style.background = 'rgba(217,119,6,0.08)';
+          dAiCallout.style.borderLeftColor = 'var(--warning)';
+        }
+      } else {
+        dAiStatus.textContent = 'KONDISI AMAN — Katup Standby (Tertutup)';
+        dAiStatus.style.color = 'var(--success)';
+        if (dRiskGap) dRiskGap.textContent = `+${Math.max(0, 75 - risk)}% menuju pemicu otomatis (75%)`;
+        if (dAiCallout) {
+          dAiCallout.style.background = 'rgba(39,103,73,0.06)';
+          dAiCallout.style.borderLeftColor = 'var(--success)';
+        }
+      }
+    }
   },
 
   updateStatusBadge(status, riskScore) {
@@ -777,21 +818,36 @@ const Dashboard = {
   },
 
   updateDrainageModeUI(mode) {
-    const cb = document.getElementById('drainage-mode-checkbox');
-    if (cb) {
-      cb.checked = (mode === 'auto');
+    const isAuto = mode === 'auto';
+    const btnAuto = document.getElementById('mode-btn-auto');
+    const btnManual = document.getElementById('mode-btn-manual');
+    if (btnAuto && btnManual) {
+      if (isAuto) {
+        btnAuto.className = 'mode-seg-btn active auto';
+        btnManual.className = 'mode-seg-btn';
+      } else {
+        btnManual.className = 'mode-seg-btn active manual';
+        btnAuto.className = 'mode-seg-btn';
+      }
     }
+
+    const cb = document.getElementById('drainage-mode-checkbox');
+    if (cb) cb.checked = isAuto;
+
     const label = document.getElementById('drainage-mode-text');
     if (label) {
-      label.textContent = mode === 'auto' ? 'Mode Otomatis (AI)' : 'Mode Manual (Tanpa AI)';
+      label.textContent = isAuto ? 'Mode Otomatis (AI)' : 'Mode Manual (Tanpa AI)';
     }
+
     const note = document.getElementById('drainage-auto-note');
     if (note) {
-      note.style.display = mode === 'auto' ? 'block' : 'none';
+      note.textContent = isAuto 
+        ? 'Sistem otomatis aktif saat Risk Score ≥ 75%'
+        : 'Mode manual aktif — Katup dikendalikan melalui tombol kendali di atas';
     }
   },
 
-  async toggleDrainageMode() {
+  async setDrainageMode(targetMode) {
     const role = AppState.user?.role;
     if (role !== 'admin' && role !== 'operator') {
       showToast('Hanya Admin/Operator yang dapat mengubah mode drainase', 'warning');
@@ -806,14 +862,11 @@ const Dashboard = {
       return;
     }
 
-    const cb = document.getElementById('drainage-mode-checkbox');
-    const targetMode = cb ? (cb.checked ? 'auto' : 'manual') : (AppState.drainageMode === 'auto' ? 'manual' : 'auto');
-
     try {
       const { ok, data } = await API.post('/drainage/mode', { mode: targetMode });
       if (ok) {
         AppState.drainageMode = data.mode;
-        showToast(data.message || 'Mode drainase berhasil diubah!', 'success');
+        showToast(data.message || `Mode drainase berhasil diubah ke ${targetMode === 'auto' ? 'Otomatis' : 'Manual'}!`, 'success');
       } else {
         showToast(data.message || 'Gagal mengubah mode', 'danger');
       }
@@ -822,6 +875,11 @@ const Dashboard = {
     } finally {
       this.updateDrainageModeUI(AppState.drainageMode);
     }
+  },
+
+  async toggleDrainageMode() {
+    const nextMode = AppState.drainageMode === 'auto' ? 'manual' : 'auto';
+    await this.setDrainageMode(nextMode);
   },
 
   async setPowerHistoryFilter(days, btn) {

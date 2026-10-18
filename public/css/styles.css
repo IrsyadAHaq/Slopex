@@ -3373,6 +3373,51 @@ body {
   }
 }
 
+/* ===== DRAINAGE MODE SEGMENTED CONTROL ===== */
+.drainage-mode-segmented {
+  display: inline-flex;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 28px;
+  padding: 4px;
+  margin: 0 auto 16px auto;
+  gap: 4px;
+}
+
+.mode-seg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+}
+
+.mode-seg-btn.active.auto {
+  background: var(--success);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(72, 187, 120, 0.35);
+}
+
+.mode-seg-btn.active.manual {
+  background: var(--navy-dark);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(1, 31, 75, 0.25);
+}
+
+.mode-seg-btn:not(.active):hover {
+  color: var(--navy-darkest);
+  background: rgba(0, 0, 0, 0.04);
+}
+
 .drainage-layout {
   display: grid;
   grid-template-columns: 1fr 380px;
