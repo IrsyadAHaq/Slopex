@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { Client } = require('ssh2');
 const { createZip } = require('./zip');
 
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
