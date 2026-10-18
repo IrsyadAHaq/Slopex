@@ -6,6 +6,8 @@ npm-debug.log
 deploy*.js
 run-docker.js
 get-logs.js
+scripts/create_docs.py
+docs/
 *.tar
 *.zip
 *.tgz

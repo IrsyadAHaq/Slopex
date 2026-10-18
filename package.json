@@ -10,6 +10,7 @@
     "dev:all": "concurrently \"nodemon server.js\" \"node whatsapp-bot/index.js\"",
     "bundle": "node scripts/zip.js",
     "deploy": "node scripts/deploy.js",
+    "deploy:clean": "node scripts/deploy.js --reset-data",
     "remote:logs": "node scripts/get-logs.js"
   },
   "dependencies": {

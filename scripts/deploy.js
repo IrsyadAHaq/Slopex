@@ -11,6 +11,8 @@ const PASSWORD = process.argv[2] || process.env.SSH_PASSWORD || 'L42d11ejXr';
 
 const zipPath = path.join(__dirname, '../slopex.zip');
 
+const RESET_DATA = process.argv.includes('--reset-data') || process.argv.includes('--fresh-db');
+
 const conn = new Client();
 conn.on('ready', () => {
     console.log('Client :: ready');
@@ -29,8 +31,10 @@ conn.on('ready', () => {
                 'cd ~/slopex-app 2>/dev/null && (docker-compose down || true) || true',
                 'cd ~/slopex-web/web 2>/dev/null && (docker-compose down || true) || true',
                 
-                // 2. Backup server data directory before cleanup
-                'mkdir -p /tmp/slopex_data_backup && (cp -r ~/slopex-web/web/data/* /tmp/slopex_data_backup/ 2>/dev/null || cp -r ~/slopex-app/data/* /tmp/slopex_data_backup/ 2>/dev/null || true)',
+                // 2. Backup server data directory before cleanup (skip if reset requested)
+                RESET_DATA
+                    ? 'rm -rf /tmp/slopex_data_backup'
+                    : 'mkdir -p /tmp/slopex_data_backup && (cp -r ~/slopex-web/web/data/* /tmp/slopex_data_backup/ 2>/dev/null || cp -r ~/slopex-app/data/* /tmp/slopex_data_backup/ 2>/dev/null || true)',
 
                 // 3. Detect UID:GID and clean up slopex-app
                 'docker run --rm -v /home/slopex:/target node:20-bullseye sh -c "OWNER=\\$(stat -c \'%u:%g\' /target) && rm -rf /target/slopex-app && mkdir -p /target/slopex-web/web && chown -R \\$OWNER /target/slopex-web"',
@@ -40,8 +44,10 @@ conn.on('ready', () => {
                 // 4. Clean up old code files EXCLUDING data/ and whatsapp-bot/.wwebjs_auth
                 'docker run --rm -v /home/slopex/slopex-web/web:/target node:20-bullseye sh -c "OWNER=\\$(stat -c \'%u:%g\' /target) && mkdir -p /target/whatsapp-bot /target/data && chown -R \\$OWNER /target /target/whatsapp-bot /target/data && chmod 777 /target/whatsapp-bot /target/data && rm -rf /target/config /target/controllers /target/middleware /target/models /target/public /target/routes /target/utils /target/server.js /target/package.json /target/package-lock.json /target/Dockerfile /target/docker-compose.yml /target/.dockerignore /target/.env /target/whatsapp-bot/index.js /target/test-model.js"',
 
-                // 5. Restore data files from backup if any
-                'mkdir -p data && (cp -r /tmp/slopex_data_backup/* data/ 2>/dev/null || true)',
+                // 5. Restore data files from backup or start fresh
+                RESET_DATA
+                    ? 'rm -rf data/* && mkdir -p data'
+                    : 'mkdir -p data && (cp -r /tmp/slopex_data_backup/* data/ 2>/dev/null || true)',
 
                 // 6. Unzip code package (without overwriting data/)
                 'unzip -o slopex.zip',
@@ -51,7 +57,7 @@ conn.on('ready', () => {
                 'docker-compose up -d --build'
             ].join(' && ');
 
-            console.log('Executing remote migration and build commands with DATA PRESERVATION...');
+            console.log('Executing remote migration and build commands ' + (RESET_DATA ? 'WITH FRESH DATA RESET...' : 'with DATA PRESERVATION...'));
             conn.exec(cmd, (err, stream) => {
                 if (err) throw err;
                 stream.on('close', (code, signal) => {
