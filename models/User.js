@@ -32,13 +32,17 @@ const UserModel = {
     const cleanRole = ['admin', 'operator', 'viewer'].includes(role) ? role : 'viewer';
 
     const { saveImmediately } = require('../config/db');
+    let cleanWa = whatsapp ? String(whatsapp).replace(/\D/g, '') : '';
+    if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.slice(1);
+    else if (cleanWa.startsWith('8')) cleanWa = '62' + cleanWa;
+
     const doc = await DB.insert(this.collection, {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       password: hashed,
       role: cleanRole,
       institution: (institution || '').trim(),
-      whatsapp: whatsapp ? String(whatsapp).replace(/\D/g, '') : '',
+      whatsapp: cleanWa,
       isActive: isAutoVerified,
       isVerified: isAutoVerified,
       isDemo: Boolean(isDemo),

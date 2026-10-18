@@ -87,7 +87,9 @@ const getMe = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const { name, institution, whatsapp } = req.body;
-    let cleanWa = whatsapp ? whatsapp.replace(/\D/g, '') : '';
+    let cleanWa = whatsapp ? String(whatsapp).replace(/\D/g, '') : '';
+    if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.slice(1);
+    else if (cleanWa.startsWith('8')) cleanWa = '62' + cleanWa;
     const user = await User.updateById(req.user.id, { name, institution, whatsapp: cleanWa });
     res.json({ success: true, message: 'Profil berhasil diperbarui.', user: User.sanitize(user) });
   } catch (e) {

@@ -66,6 +66,8 @@ function formatWhatsAppNumber(num) {
     if (!clean) return '';
     if (clean.startsWith('0')) {
         clean = '62' + clean.slice(1);
+    } else if (clean.startsWith('8')) {
+        clean = '62' + clean;
     }
     if (!clean.endsWith('@c.us')) {
         clean = clean + '@c.us';
