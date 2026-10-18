@@ -24,8 +24,16 @@ const receiveData = async (req, res) => {
     if (soilDangkal === undefined || soilDalam === undefined || magnitude === undefined)
       return res.status(400).json({ success: false, message: 'Wajib: soilDangkal, soilDalam, magnitude' });
 
+    const clampedSoil1 = Math.max(0, Math.min(100, parseFloat(soilDangkal) || 0));
+    const clampedSoil2 = Math.max(0, Math.min(100, parseFloat(soilDalam) || 0));
+    const clampedMag = Math.max(0, Math.min(90, parseFloat(magnitude) || 0));
+
     const doc = await SensorData.create({
-      deviceId, soilDangkal, soilDalam, magnitude, gpsLat, gpsLng,
+      deviceId,
+      soilDangkal: clampedSoil1,
+      soilDalam: clampedSoil2,
+      magnitude: clampedMag,
+      gpsLat, gpsLng,
       statusDevice, vSolar, iSolar, vBuck, iBuck, vAki, iAki, statusRelay,
       slopeDeg, slope, rainfall, curahHujan
     });

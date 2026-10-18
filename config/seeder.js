@@ -202,8 +202,12 @@ async function autoSeedDemoAccounts() {
       console.log('   Password: slopex2026');
     }
 
-    // Jalankan seeding data time-series sensor
-    await autoSeedSensorData();
+    // Jalankan seeding data time-series sensor HANYA jika flag SEED_SENSOR aktif
+    if (process.env.SEED_SENSOR === 'true') {
+      await autoSeedSensorData();
+    } else {
+      console.log('[SEED] Production / Real Telemetry mode: Auto-seed dummy sensor dinonaktifkan.');
+    }
 
   } catch (e) {
     console.error('[SEED] Auto-seed gagal:', e.message);

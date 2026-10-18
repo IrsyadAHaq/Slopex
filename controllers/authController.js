@@ -90,10 +90,18 @@ const updateProfile = async (req, res) => {
     let cleanWa = whatsapp ? String(whatsapp).replace(/\D/g, '') : '';
     if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.slice(1);
     else if (cleanWa.startsWith('8')) cleanWa = '62' + cleanWa;
+
+    if (cleanWa) {
+      const existingPhone = await User.findByPhone(cleanWa);
+      if (existingPhone && existingPhone.id !== req.user.id) {
+        return res.status(400).json({ success: false, message: 'Nomor WhatsApp sudah digunakan oleh akun lain.' });
+      }
+    }
+
     const user = await User.updateById(req.user.id, { name, institution, whatsapp: cleanWa });
     res.json({ success: true, message: 'Profil berhasil diperbarui.', user: User.sanitize(user) });
   } catch (e) {
-    res.status(500).json({ success: false, message: 'Gagal memperbarui profil.' });
+    res.status(500).json({ success: false, message: e.message || 'Gagal memperbarui profil.' });
   }
 };
 

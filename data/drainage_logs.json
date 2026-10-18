@@ -1,16 +1,1 @@
-[
-  {
-    "id": "5ac926ce-8338-452f-b10b-fbd840ea2e6b",
-    "deviceId": "SLOPEX-001",
-    "action": "open",
-    "zone": "Z1",
-    "triggeredBy": "auto",
-    "triggeredByUser": null,
-    "triggeredByName": "SLOPEX-AI",
-    "reason": "Auto-buka Katup Drainase (BAHAYA): Risk Score 91% >= 50%. Soil=70%, Mag=20.00deg",
-    "riskScoreAtTime": 91,
-    "isActive": true,
-    "createdAt": "2026-08-16T08:30:46.831Z",
-    "updatedAt": "2026-08-16T08:30:46.831Z"
-  }
-]
+[]

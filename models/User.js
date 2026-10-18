@@ -6,7 +6,13 @@ const UserModel = {
   collection: 'users',
 
   async findByEmail(email) {
-    return DB.findOne(this.collection, { email: email.toLowerCase() });
+    if (!email) return null;
+    return DB.findOne(this.collection, { email: String(email).trim().toLowerCase() });
+  },
+
+  async findByPhone(whatsapp) {
+    if (!whatsapp) return null;
+    return DB.findOne(this.collection, { whatsapp });
   },
 
   async findById(id) {
@@ -19,12 +25,22 @@ const UserModel = {
 
   async create({ name, email, password, role = 'viewer', institution = '', whatsapp = '', isDemo = false }) {
     // Validasi
-    if (!name || !email || !password) throw new Error('Nama, email, dan password wajib diisi.');
+    const trimmedEmail = String(email || '').trim().toLowerCase();
+    if (!name || !trimmedEmail || !password) throw new Error('Nama, email, dan password wajib diisi.');
     if (password.length < 6) throw new Error('Password minimal 6 karakter.');
-    if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Format email tidak valid.');
+    if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) throw new Error('Format email tidak valid.');
 
-    const existing = await this.findByEmail(email);
+    const existing = await this.findByEmail(trimmedEmail);
     if (existing) throw new Error('Email sudah terdaftar.');
+
+    let cleanWa = whatsapp ? String(whatsapp).replace(/\D/g, '') : '';
+    if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.slice(1);
+    else if (cleanWa.startsWith('8')) cleanWa = '62' + cleanWa;
+
+    if (cleanWa && !isDemo) {
+      const existingPhone = await this.findByPhone(cleanWa);
+      if (existingPhone) throw new Error('Nomor WhatsApp sudah digunakan oleh akun lain.');
+    }
 
     const hashed = await bcrypt.hash(password, 12);
 
@@ -32,13 +48,9 @@ const UserModel = {
     const cleanRole = ['admin', 'operator', 'viewer'].includes(role) ? role : 'viewer';
 
     const { saveImmediately } = require('../config/db');
-    let cleanWa = whatsapp ? String(whatsapp).replace(/\D/g, '') : '';
-    if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.slice(1);
-    else if (cleanWa.startsWith('8')) cleanWa = '62' + cleanWa;
-
     const doc = await DB.insert(this.collection, {
       name: name.trim(),
-      email: email.toLowerCase().trim(),
+      email: trimmedEmail,
       password: hashed,
       role: cleanRole,
       institution: (institution || '').trim(),
