@@ -1,8 +1,7 @@
 FROM node:20-bullseye
 
-# Install firefox for whatsapp-web.js as configured in index.js
+# Install chromium for whatsapp-web.js in Docker
 RUN apt-get update && apt-get install -y \
-    firefox-esr \
     chromium \
     && rm -rf /var/lib/apt/lists/*
 

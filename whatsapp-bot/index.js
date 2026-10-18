@@ -22,10 +22,32 @@ let knownUserIds = new Set();
 
 const isDocker = process.env.IS_DOCKER === 'true';
 
+// Auto-detect Chromium executable path for Docker / Linux, or fallback to Puppeteer bundled Chromium on Windows
+function getExecutablePath() {
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        return process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+    if (isDocker || process.platform === 'linux') {
+        const linuxCandidates = [
+            '/usr/bin/chromium',
+            '/usr/bin/chromium-browser',
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/google-chrome'
+        ];
+        for (const candidate of linuxCandidates) {
+            if (fs.existsSync(candidate)) return candidate;
+        }
+    }
+    // Return undefined on Windows / local environments to let Puppeteer use bundled Chromium
+    return undefined;
+}
+
+const execPath = getExecutablePath();
+
 const client = new Client({
     authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '.wwebjs_auth') }),
     puppeteer: { 
-        executablePath: isDocker ? '/usr/bin/chromium' : '/usr/bin/firefox',
+        ...(execPath ? { executablePath: execPath } : {}),
         headless: true,
         args: [
             '--no-sandbox', 
@@ -134,7 +156,6 @@ async function broadcastEmergencyAlert(alertObj) {
     const vwc = snap.vwc != null ? snap.vwc : ((s1 + s2) / 2);
     const mag = snap.magnitude != null ? snap.magnitude : 0;
     const slope = snap.slopeDeg != null ? snap.slopeDeg : 30;
-    const rain = snap.rainfall != null ? snap.rainfall : 2000;
     const isDanger = alertObj.severity === 'danger' || riskScore >= RISK_DANGER;
 
     const msg = `🚨 *SLOPEX PERINGATAN DINI* 🚨\n`
@@ -145,8 +166,7 @@ async function broadcastEmergencyAlert(alertObj) {
         + `- Risk Score: *${riskScore}%*\n`
         + `- VWC (Kadar Air Rata-rata): *${vwc.toFixed(1)}%*\n`
         + `- Perubahan Kemiringan (Tilt): *${typeof mag === 'number' ? mag.toFixed(2) : mag}°*\n`
-        + `- Sudut Lereng Asli (Slope): ${slope}°\n`
-        + `- Curah Hujan Wilayah: ${rain} mm/tahun\n\n`
+        + `- Sudut Lereng Asli (Slope): ${slope}°\n\n`
         + `⚠️ *Instruksi Mitigasi (SNI 8235:2017):*\n`
         + (isDanger
             ? `• Segera evakuasi ke titik kumpul aman!\n• Sirine & drainase otomatis diaktifkan!`
@@ -271,7 +291,6 @@ client.on('message', async msg => {
         
         const vwc = sensor.vwc != null ? sensor.vwc : ((soilDangkal + soilDalam) / 2);
         const slope = sensor.slopeDeg != null ? sensor.slopeDeg : 30;
-        const rain = sensor.rainfall != null ? sensor.rainfall : 2000;
 
         const replyMsg = `📊 *STATUS SENSOR & RISIKO SLOPEX TERKINI* 📊\n`
             + `=========================\n`
@@ -281,7 +300,6 @@ client.on('message', async msg => {
             + `- Soil Atas / Bawah: ${soilDangkal}% / ${soilDalam}%\n`
             + `- Perubahan Sudut (Tilt): ${typeof magnitude === 'number' ? magnitude.toFixed(2) : magnitude}°\n`
             + `- Kemiringan Lereng Asli: ${slope}°\n`
-            + `- Curah Hujan Wilayah: ${rain} mm/tahun\n`
             + `- Tegangan Solar / Aki: ${vSolar}V / ${vAki}V\n`
             + `- Status Katup Drainase: ${statusRelay}\n`
             + `=========================\n`

@@ -421,7 +421,7 @@ window.executeExportDownload = async function() {
       URL.revokeObjectURL(url);
     } else {
       // CSV format with UTF-8 BOM
-      let csv = "\uFEFFWaktu (WIB),Soil Dangkal (%),Soil Dalam (%),VWC (%),Magnitude (°),Curah Hujan (mm/j),Risk Score (%),Status Lereng,Relay Drainase,V Solar (V),I Solar (mA),V Aki (V),I Aki (mA)\r\n";
+      let csv = "\uFEFFWaktu (WIB),Soil Dangkal (%),Soil Dalam (%),VWC (%),Magnitude (°),Risk Score (%),Status Lereng,Relay Drainase,V Solar (V),I Solar (mA),V Aki (V),I Aki (mA)\r\n";
       records.forEach(row => {
         const dt = new Date(row.createdAt || row.timestamp);
         const timeFormatted = isNaN(dt.getTime()) ? '' : (
@@ -432,7 +432,6 @@ window.executeExportDownload = async function() {
         const s2 = (row.soilDalam != null ? row.soilDalam : (row.soil2 || 0)).toFixed(1);
         const vwc = (row.vwc != null ? row.vwc : 0).toFixed(1);
         const mag = (Math.abs(row.magnitude != null ? row.magnitude : (row.tiltX || 0))).toFixed(2);
-        const rain = (row.rainfall != null ? row.rainfall : (row.curahHujan || 0)).toFixed(1);
         const risk = Math.round(row.riskScore || 0);
         const status = risk >= 75 ? 'BAHAYA' : risk >= 50 ? 'WASPADA' : 'AMAN';
         const relay = (row.statusRelay && String(row.statusRelay).toUpperCase().includes('OPEN')) || risk >= 75 ? 'OPEN' : 'CLOSED';
@@ -441,7 +440,7 @@ window.executeExportDownload = async function() {
         const vAki = (row.vAki || 0).toFixed(2);
         const iAki = Math.round(row.iAki || 0);
 
-        csv += `"${timeFormatted}",${s1},${s2},${vwc},${mag},${rain},${risk},"${status}","${relay}",${vSolar},${iSolar},${vAki},${iAki}\r\n`;
+        csv += `"${timeFormatted}",${s1},${s2},${vwc},${mag},${risk},"${status}","${relay}",${vSolar},${iSolar},${vAki},${iAki}\r\n`;
       });
 
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

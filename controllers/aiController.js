@@ -6,7 +6,7 @@ const Alert      = require('../models/Alert');
 const axios      = require('axios');
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://172.16.0.244:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2:latest';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3:latest';
 
 // ----------------------------------------------------------------
 // System prompt

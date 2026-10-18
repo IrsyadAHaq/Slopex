@@ -145,7 +145,7 @@ const AIChat = {
       </div>
       <div class="chat-bubble" style="color:var(--text-muted);font-size:13px">
         <i class="fas fa-spinner fa-spin" style="margin-right:8px"></i>
-        Menganalisis data sensor dengan Llama 3.2 AI...
+        Menganalisis data sensor dengan Llama 3 AI...
       </div>
     `;
     container.appendChild(el);

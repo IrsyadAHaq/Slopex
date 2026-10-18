@@ -478,7 +478,7 @@ const Monitoring = {
       const s2 = Number((row.soilDalam != null ? row.soilDalam : (row.soil2 != null ? row.soil2 : 0)).toFixed(1));
       const vwc = Number((row.vwc != null ? row.vwc : ((s1 + s2) / 2 * 0.5)).toFixed(1));
       const tilt = Number((Math.abs(row.magnitude != null ? row.magnitude : (row.tiltX || 0))).toFixed(2));
-      const rain = Number((row.rainfall != null ? row.rainfall : (row.curahHujan || 0)).toFixed(1));
+      const vSolar = row.vSolar != null ? Number(row.vSolar).toFixed(2) + ' V' : '--';
       const isRelayOpen = (row.statusRelay && String(row.statusRelay).toUpperCase().includes('OPEN')) || (risk >= 75);
       const relayBadge = isRelayOpen ? 
         '<span class="summary-status-badge badge-danger"><i class="fas fa-droplet"></i> OPEN</span>' : 
@@ -493,7 +493,7 @@ const Monitoring = {
           <td><strong style="color:var(--blue-medium);">${s2}%</strong></td>
           <td>${vwc}%</td>
           <td>${tilt}°</td>
-          <td>${rain} mm/j</td>
+          <td><span style="font-weight:600; color:var(--text-main);">${vSolar}</span></td>
           <td>
             <span style="font-weight:700; color:${risk >= 75 ? 'var(--danger)' : risk >= 50 ? 'var(--warning)' : 'var(--success)'};">
               ${risk}%

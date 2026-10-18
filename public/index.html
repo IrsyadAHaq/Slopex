@@ -237,7 +237,7 @@
               </div>
               <div class="scard-value"><span id="val-soilDangkal">--</span><span>%</span></div>
               <div class="scard-label">Kelembapan Soil Dangkal</div>
-              <div class="scard-sub"><i class="fas fa-location-pin"></i> Indikator Infiltrasi Hujan</div>
+              <div class="scard-sub"><i class="fas fa-location-pin"></i> Lapisan Dangkal (Kedalaman 20cm)</div>
             </div>
 
             <!-- Card 3: Soil Dalam -->
@@ -818,7 +818,7 @@
 
                 <div style="margin-top:14px; padding:10px 12px; background:rgba(3,57,108,0.05); border-left:3px solid var(--blue-medium); border-radius:var(--radius-sm); font-size:11px; color:var(--text-muted); line-height:1.5;">
                   <i class="fas fa-robot" style="color:var(--blue-medium); margin-right:4px;"></i>
-                  Sistem otomasi digerakkan oleh inferensi model <strong>Random Forest</strong> yang mengintegrasikan Slope Lereng (35%), Curah Hujan (30%), VWC (25%), dan Tilt (10%).
+                  Sistem otomasi digerakkan oleh inferensi model <strong>Random Forest</strong> terkalibrasi SNI 8235:2017 berbasis multi-parameter geoteknik dan hidrologi lereng.
                 </div>
               </div>
             </div>
@@ -1016,7 +1016,7 @@
                         <th>SOIL DALAM</th>
                         <th>VWC TANAH</th>
                         <th>TILT ADXL345</th>
-                        <th>CURAH HUJAN</th>
+                        <th>V SOLAR</th>
                         <th>RISK SCORE</th>
                         <th>STATUS LERENG</th>
                         <th>STATUS RELAY</th>
@@ -1066,7 +1066,7 @@
                 <div class="ai-logo"><i class="fas fa-robot"></i></div>
                 <div>
                   <div class="ai-title">SLOPEX AI</div>
-                  <div class="ai-subtitle">Powered by Llama 3.2</div>
+                  <div class="ai-subtitle">Powered by Llama 3 AI</div>
                 </div>
               </div>
               <div class="ai-sidebar-body">
@@ -1116,7 +1116,7 @@
                 </button>
               </div>
               <div style="text-align:center;padding:8px;font-size:11px;color:var(--text-muted)">
-                AI menggunakan data sensor real-time &bull; Llama 3.2 AI &bull; Patuh SNI 8235:2017
+                AI menggunakan data sensor real-time &bull; Llama 3 AI &bull; Patuh SNI 8235:2017
               </div>
             </div>
           </div>
@@ -1979,7 +1979,7 @@
 
         <div style="font-size:12px; color:var(--text-muted); line-height:1.5; background:rgba(3,57,108,0.05); padding:10px 12px; border-radius:var(--radius-sm); border-left:3px solid var(--blue-medium);">
           <i class="fas fa-circle-info" style="color:var(--blue-medium); margin-right:4px;"></i>
-          Berkas yang diunduh mencakup parameter sensor geoteknik (S1, S2, VWC, Tilt, Curah Hujan), telemetri daya aki &amp; panel surya, serta hasil klasifikasi Random Forest.
+          Berkas yang diunduh mencakup parameter sensor geoteknik (S1, S2, VWC, Tilt), telemetri daya aki &amp; panel surya, serta hasil klasifikasi Random Forest.
         </div>
       </div>
       <div class="export-modal-footer">
