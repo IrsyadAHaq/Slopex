@@ -19,6 +19,11 @@ let lastAlertTime = 0;
 let lastDailyReportDay = -1;
 let jwtToken = null;
 let knownUserIds = new Set();
+let client = null;
+let isReady = false;
+let isInitializing = false;
+let pollingStarted = false;
+let watcherStarted = false;
 
 const isDocker = process.env.IS_DOCKER === 'true';
 
@@ -42,24 +47,24 @@ function getExecutablePath() {
     return undefined;
 }
 
-const execPath = getExecutablePath();
-
-const client = new Client({
-    authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '.wwebjs_auth') }),
-    puppeteer: { 
-        ...(execPath ? { executablePath: execPath } : {}),
-        headless: true,
-        args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu'
-        ] 
+function cleanLockFiles() {
+    const sessionDir = path.join(__dirname, '.wwebjs_auth', 'session');
+    if (fs.existsSync(sessionDir)) {
+        try {
+            const files = fs.readdirSync(sessionDir);
+            for (const file of files) {
+                if (file.startsWith('Singleton')) {
+                    try {
+                        fs.unlinkSync(path.join(sessionDir, file));
+                        console.log(`[SLOPEX WA BOT] Menghapus lock file: ${file}`);
+                    } catch (e) {}
+                }
+            }
+        } catch (err) {
+            console.warn('[SLOPEX WA BOT] Gagal membersihkan lock files:', err.message);
+        }
     }
-});
+}
 
 function formatWhatsAppNumber(num) {
     let clean = (num || '').toString().replace(/\D/g, '');
@@ -73,6 +78,20 @@ function formatWhatsAppNumber(num) {
         clean = clean + '@c.us';
     }
     return clean;
+}
+
+async function safeSendMessage(target, msg) {
+    if (!client || !isReady) {
+        console.warn(`[SLOPEX WA BOT] Skip kirim pesan ke ${target}: Client belum terhubung/ready.`);
+        return false;
+    }
+    try {
+        await client.sendMessage(target, msg);
+        return true;
+    } catch (err) {
+        console.error(`[SLOPEX WA BOT] Gagal mengirim pesan ke ${target}:`, err.message);
+        return false;
+    }
 }
 
 async function getUsers() {
@@ -132,12 +151,7 @@ async function sendConnectionNotification() {
             + `- Ketik *!bantuan* untuk info detail standar mitigasi.\n\n`
             + `_Terima kasih telah menggunakan sistem SLOPEX._\n`
             + `=========================`;
-        try {
-            await client.sendMessage(target, msg);
-            console.log(`[SLOPEX WA BOT] Notifikasi aktif dikirim ke: ${target}`);
-        } catch (err) {
-            console.error(`[SLOPEX WA BOT] Gagal mengirim notifikasi ke ${target}:`, err.message);
-        }
+        await safeSendMessage(target, msg);
     }
 }
 
@@ -177,17 +191,15 @@ async function broadcastEmergencyAlert(alertObj) {
 
     console.log(`[SLOPEX WA BOT] Broadcasting darurat ke ${recipients.length} nomor...`);
     for (const target of recipients) {
-        try {
-            await client.sendMessage(target, msg);
-            console.log(`[SLOPEX WA BOT] Emergency alert sent to ${target}`);
-        } catch (err) {
-            console.error(`[SLOPEX WA BOT] Gagal mengirim alert ke ${target}:`, err.message);
-        }
+        await safeSendMessage(target, msg);
     }
     lastAlertTime = now;
 }
 
 function watchNewUsers() {
+    if (watcherStarted) return;
+    watcherStarted = true;
+
     const usersFile = path.join(__dirname, '..', 'data', 'users.json');
     console.log('[SLOPEX WA BOT] Memulai watcher untuk pendaftaran user baru...');
     
@@ -213,11 +225,7 @@ function watchNewUsers() {
 
                         for (const num of NOTIFY_NUMBERS) {
                             if (!num || num === '@c.us') continue;
-                            try {
-                                await client.sendMessage(formatWhatsAppNumber(num), adminMsg);
-                            } catch (e) {
-                                console.error(`[SLOPEX WA BOT] Gagal notif verifikasi ke ${num}:`, e.message);
-                            }
+                            await safeSendMessage(formatWhatsAppNumber(num), adminMsg);
                         }
                     }
 
@@ -243,12 +251,7 @@ function watchNewUsers() {
                                 + `_Terima kasih atas partisipasi Anda._\n`
                                 + `=========================`;
 
-                        try {
-                            await client.sendMessage(target, msgStr);
-                            console.log(`[SLOPEX WA BOT] Notifikasi pendaftaran dikirim ke: ${user.name} (${target})`);
-                        } catch (err) {
-                            console.error(`[SLOPEX WA BOT] Gagal mengirim notifikasi pendaftaran ke ${user.name}:`, err.message);
-                        }
+                        await safeSendMessage(target, msgStr);
                     }
                 }
             }
@@ -256,76 +259,61 @@ function watchNewUsers() {
     });
 }
 
-client.on('qr', (qr) => {
-    console.log('\n[SLOPEX WA BOT] Silakan scan QR Code di bawah menggunakan WhatsApp Anda:');
-    qrcode.generate(qr, { small: true });
-});
+function setupMessageHandler(cli) {
+    cli.on('message', async msg => {
+        const text = msg.body.trim().toLowerCase();
+        
+        if (text === '!status') {
+            const resData = await fetchSensorData();
+            if (!resData || !resData.data) {
+                msg.reply('❌ Gagal mengambil data sensor dari server. Belum ada data sensor masuk atau server sedang diproses.');
+                return;
+            }
+            
+            const sensor = resData.data;
+            const riskScore = sensor.riskScore || 0;
+            const soilDangkal = sensor.soilDangkal || sensor.soil1 || 0;
+            const soilDalam = sensor.soilDalam || sensor.soil2 || 0;
+            const magnitude = sensor.magnitude || sensor.tiltX || 0;
+            const statusDevice = sensor.statusDevice || (riskScore >= 75 ? 'BAHAYA' : riskScore >= 50 ? 'WASPADA' : 'AMAN');
+            const vSolar = sensor.vSolar != null ? sensor.vSolar : '-';
+            const vAki = sensor.vAki != null ? sensor.vAki : '-';
+            const statusRelay = sensor.statusRelay || 'MATI (STANDBY)';
 
-client.on('ready', async () => {
-    console.log('[SLOPEX WA BOT] Bot WhatsApp telah berhasil terhubung dan siap!');
-    await initKnownUsers();
-    startPolling();
-    await sendConnectionNotification();
-    watchNewUsers();
-});
+            const statusStr = riskScore < 50 ? '✅ AMAN (NORMAL)' : (riskScore >= 75 ? '🚨 BAHAYA (AWAS)' : '⚠️ WASPADA (SIAGA)');
+            
+            const vwc = sensor.vwc != null ? sensor.vwc : ((soilDangkal + soilDalam) / 2);
+            const slope = sensor.slopeDeg != null ? sensor.slopeDeg : 30;
 
-client.on('message', async msg => {
-    const text = msg.body.trim().toLowerCase();
-    
-    if (text === '!status') {
-        const resData = await fetchSensorData();
-        if (!resData || !resData.data) {
-            msg.reply('❌ Gagal mengambil data sensor dari server. Belum ada data sensor masuk atau server sedang diproses.');
-            return;
+            const replyMsg = `📊 *STATUS SENSOR & RISIKO SLOPEX TERKINI* 📊\n`
+                + `=========================\n`
+                + `🔴 *Kondisi Lereng:* ${statusStr}\n`
+                + `- Risk Score: *${riskScore}%* (Klasifikasi: ${statusDevice})\n`
+                + `- VWC (Kadar Air Tanah): ${vwc.toFixed(1)}%\n`
+                + `- Soil Atas / Bawah: ${soilDangkal}% / ${soilDalam}%\n`
+                + `- Perubahan Sudut (Tilt): ${typeof magnitude === 'number' ? magnitude.toFixed(2) : magnitude}°\n`
+                + `- Kemiringan Lereng Asli: ${slope}°\n`
+                + `- Tegangan Solar / Aki: ${vSolar}V / ${vAki}V\n`
+                + `- Status Katup Drainase: ${statusRelay}\n`
+                + `=========================\n`
+                + `_Data diperbarui secara real-time dari model Random Forest & SNI 8235._`;
+            msg.reply(replyMsg);
+        } else if (text === '!bantuan') {
+            const replyMsg = `ℹ️ *PANDUAN MITIGASI SLOPEX (SNI 8235:2017)* ℹ️\n`
+                + `=========================\n`
+                + `*Tingkat Peringatan Dini & Tindakan:*\n\n`
+                + `🟡 *WASPADA (Tingkat 1)*\n`
+                + `Bunyi sirine lambat. Warga bersiap mengemasi barang-barang berharga dan bersiap evakuasi.\n\n`
+                + `🟠 *SIAGA (Tingkat 2)*\n`
+                + `Bunyi sirine sedang. Evakuasi kelompok rentan (lansia, anak-anak, disabilitas) dimulai.\n\n`
+                + `🔴 *AWAS / BAHAYA (Tingkat 3)*\n`
+                + `Bunyi sirine cepat. Evakuasi menyeluruh warga ke titik kumpul aman.\n\n`
+                + `=========================\n`
+                + `Sistem SLOPEX didesain oleh Universitas Padjadjaran (PKM-KC 2026).`;
+            msg.reply(replyMsg);
         }
-        
-        const sensor = resData.data;
-        const riskScore = sensor.riskScore || 0;
-        const soilDangkal = sensor.soilDangkal || sensor.soil1 || 0;
-        const soilDalam = sensor.soilDalam || sensor.soil2 || 0;
-        const magnitude = sensor.magnitude || sensor.tiltX || 0;
-        const statusDevice = sensor.statusDevice || (riskScore >= 75 ? 'BAHAYA' : riskScore >= 50 ? 'WASPADA' : 'AMAN');
-        const vSolar = sensor.vSolar != null ? sensor.vSolar : '-';
-        const vAki = sensor.vAki != null ? sensor.vAki : '-';
-        const statusRelay = sensor.statusRelay || 'MATI (STANDBY)';
-
-        const statusStr = riskScore < 50 ? '✅ AMAN (NORMAL)' : (riskScore >= 75 ? '🚨 BAHAYA (AWAS)' : '⚠️ WASPADA (SIAGA)');
-        
-        const vwc = sensor.vwc != null ? sensor.vwc : ((soilDangkal + soilDalam) / 2);
-        const slope = sensor.slopeDeg != null ? sensor.slopeDeg : 30;
-
-        const replyMsg = `📊 *STATUS SENSOR & RISIKO SLOPEX TERKINI* 📊\n`
-            + `=========================\n`
-            + `🔴 *Kondisi Lereng:* ${statusStr}\n`
-            + `- Risk Score: *${riskScore}%* (Klasifikasi: ${statusDevice})\n`
-            + `- VWC (Kadar Air Tanah): ${vwc.toFixed(1)}%\n`
-            + `- Soil Atas / Bawah: ${soilDangkal}% / ${soilDalam}%\n`
-            + `- Perubahan Sudut (Tilt): ${typeof magnitude === 'number' ? magnitude.toFixed(2) : magnitude}°\n`
-            + `- Kemiringan Lereng Asli: ${slope}°\n`
-            + `- Tegangan Solar / Aki: ${vSolar}V / ${vAki}V\n`
-            + `- Status Katup Drainase: ${statusRelay}\n`
-            + `=========================\n`
-            + `_Data diperbarui secara real-time dari model Random Forest & SNI 8235._`;
-        msg.reply(replyMsg);
-    } else if (text === '!bantuan') {
-        const replyMsg = `ℹ️ *PANDUAN MITIGASI SLOPEX (SNI 8235:2017)* ℹ️\n`
-            + `=========================\n`
-            + `*Tingkat Peringatan Dini & Tindakan:*\n\n`
-            + `🟡 *WASPADA (Tingkat 1)*\n`
-            + `Bunyi sirine lambat. Warga bersiap mengemasi barang-barang berharga dan bersiap evakuasi.\n\n`
-            + `🟠 *SIAGA (Tingkat 2)*\n`
-            + `Bunyi sirine sedang. Evakuasi kelompok rentan (lansia, anak-anak, disabilitas) dimulai.\n\n`
-            + `🔴 *AWAS / BAHAYA (Tingkat 3)*\n`
-            + `Bunyi sirine cepat. Evakuasi menyeluruh warga ke titik kumpul aman.\n\n`
-            + `=========================\n`
-            + `Sistem SLOPEX didesain oleh Universitas Padjadjaran (PKM-KC 2026).`;
-        msg.reply(replyMsg);
-    }
-});
-
-client.on('auth_failure', msg => {
-    console.error('[SLOPEX WA BOT] Autentikasi Gagal:', msg);
-});
+    });
+}
 
 async function loginToSlopex() {
     try {
@@ -359,6 +347,9 @@ async function fetchSensorData() {
 }
 
 async function startPolling() {
+    if (pollingStarted) return;
+    pollingStarted = true;
+
     setInterval(async () => {
         const resData = await fetchSensorData();
         if (!resData || !resData.data) return;
@@ -400,15 +391,107 @@ async function startPolling() {
                 console.log(`[SLOPEX WA BOT] Mengirim laporan harian ke pengguna...`);
                 const recipients = await getAllRecipients();
                 for (let number of recipients) {
-                    try {
-                        await client.sendMessage(number, dailyMsg);
-                    } catch (e) { }
+                    await safeSendMessage(number, dailyMsg);
                 }
                 lastDailyReportDay = date.getDate();
             }
         }
 
     }, POLL_INTERVAL);
+}
+
+async function initializeClient() {
+    if (isInitializing) return;
+    isInitializing = true;
+
+    if (client) {
+        try {
+            console.log('[SLOPEX WA BOT] Menutup instance client lama...');
+            await client.destroy();
+        } catch (e) {}
+        client = null;
+    }
+
+    cleanLockFiles();
+
+    const execPath = getExecutablePath();
+    console.log(`[SLOPEX WA BOT] Inisialisasi client WhatsApp (Chromium: ${execPath || 'bundled'})...`);
+
+    client = new Client({
+        authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '.wwebjs_auth') }),
+        webVersionCache: {
+            type: 'remote',
+            remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/{version}.html'
+        },
+        puppeteer: {
+            ...(execPath ? { executablePath: execPath } : {}),
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--disable-gpu',
+                '--disable-extensions',
+                '--disable-background-timer-throttling',
+                '--disable-backgrounding-occluded-windows',
+                '--disable-renderer-backgrounding',
+                '--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36'
+            ]
+        }
+    });
+
+    client.on('qr', (qr) => {
+        console.log('\n[SLOPEX WA BOT] =====================================================');
+        console.log('[SLOPEX WA BOT] Silakan scan QR Code di bawah menggunakan WhatsApp:');
+        qrcode.generate(qr, { small: true });
+        console.log('[SLOPEX WA BOT] =====================================================\n');
+    });
+
+    client.on('ready', async () => {
+        console.log('[SLOPEX WA BOT] Bot WhatsApp telah berhasil terhubung dan siap!');
+        isReady = true;
+        isInitializing = false;
+        await initKnownUsers();
+        startPolling();
+        await sendConnectionNotification();
+        watchNewUsers();
+    });
+
+    client.on('authenticated', () => {
+        console.log('[SLOPEX WA BOT] WhatsApp Web terautentikasi (Sesi aktif).');
+    });
+
+    client.on('auth_failure', async (msg) => {
+        console.error('[SLOPEX WA BOT] Autentikasi Gagal:', msg);
+        isReady = false;
+        isInitializing = false;
+        cleanLockFiles();
+        setTimeout(() => initializeClient(), 10000);
+    });
+
+    client.on('disconnected', async (reason) => {
+        console.warn(`[SLOPEX WA BOT] Client disconnected: ${reason}`);
+        isReady = false;
+        isInitializing = false;
+        cleanLockFiles();
+        setTimeout(() => initializeClient(), 5000);
+    });
+
+    setupMessageHandler(client);
+
+    try {
+        await client.initialize();
+    } catch (err) {
+        console.error('[SLOPEX WA BOT] Inisialisasi error:', err.message);
+        isReady = false;
+        isInitializing = false;
+        cleanLockFiles();
+        console.log('[SLOPEX WA BOT] Mencoba inisialisasi ulang dalam 6 detik...');
+        setTimeout(() => initializeClient(), 6000);
+    }
 }
 
 // ===== BRIDGE HTTP SERVER UNTUK PROSES UTAMA BACKEND =====
@@ -419,6 +502,10 @@ botApp.post('/send-alert', async (req, res) => {
     try {
         const { title, message, severity, sensorSnapshot } = req.body;
         console.log(`[WA-BRIDGE] Pemicu Notifikasi Darurat Diterima: ${title}`);
+        if (!isReady || !client) {
+            console.warn('[WA-BRIDGE] Bot belum siap / menunggu scan QR, menolak broadcast alert sementara.');
+            return res.status(503).json({ success: false, error: 'Bot WhatsApp belum siap / menunggu scan QR' });
+        }
         await broadcastEmergencyAlert({ title, message, severity, sensorSnapshot });
         res.json({ success: true, message: 'Alert disiarkan ke WhatsApp' });
     } catch (e) {
@@ -437,27 +524,22 @@ botApp.post('/user-registered', async (req, res) => {
     }
 });
 
+// Intercept unhandled promise rejections & uncaught exceptions
+process.on('unhandledRejection', (reason) => {
+    console.warn('[SLOPEX WA BOT] Unhandled Rejection dicegat:', reason?.message || reason);
+});
+
+process.on('uncaughtException', (err) => {
+    console.warn('[SLOPEX WA BOT] Uncaught Exception dicegat:', err?.message || err);
+    if (err.message && (err.message.includes('Execution context was destroyed') || err.message.includes('Protocol error'))) {
+        console.log('[SLOPEX WA BOT] Transient Puppeteer error. Menjadwalkan inisialisasi ulang...');
+        cleanLockFiles();
+        setTimeout(() => initializeClient(), 5000);
+    }
+});
+
 const BOT_PORT = process.env.WA_BOT_PORT || 3001;
 botApp.listen(BOT_PORT, () => {
     console.log(`[SLOPEX WA BOT] Bridge HTTP Server aktif di port ${BOT_PORT}`);
+    initializeClient();
 });
-
-// Bersihkan Chromium lock files jika tertinggal dari sesi sebelumnya
-const sessionDir = path.join(__dirname, '.wwebjs_auth', 'session');
-if (fs.existsSync(sessionDir)) {
-    try {
-        const files = fs.readdirSync(sessionDir);
-        for (const file of files) {
-            if (file.startsWith('Singleton')) {
-                fs.unlinkSync(path.join(sessionDir, file));
-                console.log(`[SLOPEX WA BOT] Menghapus lock file: ${file}`);
-            }
-        }
-    } catch (err) {
-        console.warn('[SLOPEX WA BOT] Gagal membersihkan lock files:', err.message);
-    }
-}
-
-console.log('[SLOPEX WA BOT] Memulai inisialisasi Bot WhatsApp...');
-client.initialize();
-

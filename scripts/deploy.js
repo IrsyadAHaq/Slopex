@@ -50,7 +50,7 @@ async function startDeploy() {
                 'cd ~/slopex-web/web',
 
                 // 4. Clean up old code files EXCLUDING data/ and whatsapp-bot/.wwebjs_auth
-                'docker run --rm -v /home/slopex/slopex-web/web:/target node:20-bookworm sh -c "OWNER=\\$(stat -c \'%u:%g\' /target) && mkdir -p /target/whatsapp-bot /target/data && chown -R \\$OWNER /target /target/whatsapp-bot /target/data && chmod 777 /target/whatsapp-bot /target/data && rm -rf /target/config /target/controllers /target/middleware /target/models /target/public /target/routes /target/utils /target/server.js /target/package.json /target/package-lock.json /target/Dockerfile /target/docker-compose.yml /target/.dockerignore /target/.env /target/whatsapp-bot/index.js /target/test-model.js"',
+                'docker run --rm -v /home/slopex/slopex-web/web:/target node:20-bookworm sh -c "OWNER=\\$(stat -c \'%u:%g\' /target) && mkdir -p /target/whatsapp-bot /target/data && chown -R \\$OWNER /target /target/whatsapp-bot /target/data && chmod -R 777 /target/whatsapp-bot /target/data && rm -rf /target/config /target/controllers /target/middleware /target/models /target/public /target/routes /target/utils /target/server.js /target/package.json /target/package-lock.json /target/Dockerfile /target/docker-compose.yml /target/.dockerignore /target/.env /target/whatsapp-bot/index.js /target/test-model.js"',
 
                 // 5. Restore data files from backup or start fresh
                 RESET_DATA
