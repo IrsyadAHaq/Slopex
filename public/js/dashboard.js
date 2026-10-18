@@ -237,8 +237,8 @@ const Dashboard = {
     const dVwc = document.getElementById('drain-vwc');
     if (dVwc) dVwc.textContent = (sensor.vwc != null ? Number(sensor.vwc).toFixed(1) : ((s1 + s2) / 2).toFixed(1)) + '%';
 
-    const dRain = document.getElementById('drain-rainfall');
-    if (dRain) dRain.textContent = (sensor.rainfall != null ? Math.round(sensor.rainfall).toLocaleString('id-ID') : '2.000') + ' mm/th';
+    const dVsolar = document.getElementById('drain-vsolar');
+    if (dVsolar) dVsolar.textContent = (sensor.vSolar != null ? Number(sensor.vSolar).toFixed(2) : '14.20') + ' V';
 
     const dVaki = document.getElementById('drain-vaki');
     if (dVaki) dVaki.textContent = (sensor.vAki != null ? Number(sensor.vAki).toFixed(2) : '12.60') + ' V';
